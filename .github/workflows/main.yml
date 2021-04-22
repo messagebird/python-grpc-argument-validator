@@ -6,7 +6,7 @@ name: CI
 on:
   # Triggers the workflow on push or pull request events but only for the master branch
   push:
-    branches: [ '**' ]
+    branches: [ 'master' ]
   pull_request:
     branches: [ '**' ]
 
@@ -40,4 +40,4 @@ jobs:
 
       - name: Run pytest
         shell: bash
-        run: poetry run python -m pytest -p no:sugar -q tests/
+        run: poetry run python -m unittest discover -s src/tests -p '*_test.py'

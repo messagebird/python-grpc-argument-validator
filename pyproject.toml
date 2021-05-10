@@ -1,7 +1,12 @@
 [tool.poetry]
 name = "grpc-argument-validator"
 version = "0.1.0"
-description = ""
+description = "gRPC argument validator utility."
+homepage = "https://github.com/messagebird/python-grpc-argument-validator"
+repository = "https://github.com/messagebird/python-grpc-argument-validator"
+license = "BSD 3-Clause"
+readme = "README.md"
+documentation = "https://messagebird.github.io/python-grpc-argument-validator"
 authors = [
     "Jos van de Wolfshaar <jos@messagebird.com>",
     "Jorn Engelbart <jorn@messagebird.com>"

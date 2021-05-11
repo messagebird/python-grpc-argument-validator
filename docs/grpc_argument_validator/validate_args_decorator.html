@@ -29,8 +29,11 @@
 <pre><code class="python">import functools
 import itertools
 import re
+from typing import Any
 from typing import Callable
 from typing import Dict
+from typing import Iterable
+from typing import Iterator
 from typing import List
 from typing import Optional
 
@@ -181,7 +184,7 @@ def _recurse_validate(
 
     if leading_parts_name is None and field_name == &#34;&#34;:
         field_value = message
-        field_descriptor = message.DESCRIPTOR
+        field_descriptor: FieldDescriptor = message.DESCRIPTOR  # type: ignore
         full_name = message.DESCRIPTOR.name
     else:
         field_descriptor = message.DESCRIPTOR.fields_by_name[field_name]
@@ -200,7 +203,7 @@ def _recurse_validate(
 
     if remaining_fields:
         if field_descriptor.label == FieldDescriptor.LABEL_REPEATED:
-            for i, elem in enumerate(field_value):
+            for i, elem in enumerate(field_value):  # type: ignore
                 errors.extend(
                     _recurse_validate(
                         message=elem,
@@ -223,7 +226,7 @@ def _recurse_validate(
     else:
         for v in validators:
             if field_name_raw.endswith(&#34;[]&#34;) and field_descriptor.label == FieldDescriptor.LABEL_REPEATED:
-                for i, field_value_elem in enumerate(field_value):
+                for i, field_value_elem in enumerate(field_value):  # type: ignore
                     validation_result = v.check(f&#34;{full_name}[{i}]&#34;, field_value_elem, field_descriptor)
                     if not validation_result.valid:
                         errors.append(validation_result.invalid_reason)

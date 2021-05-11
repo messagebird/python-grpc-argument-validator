@@ -35,12 +35,12 @@ class PathValidator(AbstractArgumentValidator):
             return ValidationResult(valid=True)
         return ValidationResult(False, f&quot;path for '{name}' should be at least five points long&quot;)
 
-class RouteChecker(RouteCheckerServicer):
+class RouteService(RouteCheckerServicer):
     @validate_args(
         non_empty=[&quot;tags&quot;, &quot;tags[]&quot;, &quot;path.points&quot;],
         validators={&quot;path&quot;: PathValidator()},
     )
-    def Check(self, request: Route, context: grpc.ServicerContext):
+    def Create(self, request: Route, context: grpc.ServicerContext):
         return BoolValue(value=True)
 </code></pre>
 <details class="source">
@@ -63,12 +63,12 @@ class PathValidator(AbstractArgumentValidator):
             return ValidationResult(valid=True)
         return ValidationResult(False, f&#34;path for &#39;{name}&#39; should be at least five points long&#34;)
 
-class RouteChecker(RouteCheckerServicer):
+class RouteService(RouteCheckerServicer):
     @validate_args(
         non_empty=[&#34;tags&#34;, &#34;tags[]&#34;, &#34;path.points&#34;],
         validators={&#34;path&#34;: PathValidator()},
     )
-    def Check(self, request: Route, context: grpc.ServicerContext):
+    def Create(self, request: Route, context: grpc.ServicerContext):
         return BoolValue(value=True)
 ```
 &#34;&#34;&#34;

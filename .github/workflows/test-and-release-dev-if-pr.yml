@@ -12,13 +12,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Echo github obj
-        run: echo ${{ toJSON(github) }}
+        run: echo '${{ toJSON(github) }}'
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
       - uses: pre-commit/action@v2.0.0
 
   test:
     name: Tests
+    if: ${{ success() }}
     strategy:
       matrix:
         python-version: [ 3.7, 3.8, 3.9 ]

@@ -1,0 +1,95 @@
+# .github/workflows/test-pypi.yml
+name: Test and release on dev on PR
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches: [ '**' ]
+    types: [ opened, synchronize, reopened ]
+  release:
+    types: [ published ]
+
+jobs:
+  pre-commit:
+    name: Pre-commit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+      - uses: pre-commit/action@v2.0.0
+
+  test:
+    name: Tests
+    strategy:
+      matrix:
+        python-version: [ 3.7, 3.8, 3.9 ]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install Poetry
+      run: pip install poetry==1.1.6
+
+    - name: Install dependencies
+      run: poetry install
+
+    - name: Run pytest
+      run: poetry run python -m unittest discover -s src/tests -p '*_test.py'
+
+
+  publish_test_pypi:
+    name: Publish to test.pypi.org
+    if: ${{ github.event_name == 'pull_request' && success() }}
+    runs-on: ubuntu-latest
+    needs: [test, pre-commit]
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+      with:
+        python-version: '3.7'
+
+    - name: Install poetry
+      run: pip install poetry==1.1.6
+
+    - name: Format Dev Version
+      run: >-
+        poetry version patch &&
+        version=$(poetry version | awk '{print $2}') &&
+        poetry version $version.dev.$(date +%s)
+
+    - name: Build Package
+      run: poetry build
+
+    - uses: pypa/gh-action-pypi-publish@v1.4.2
+      with:
+        user: __token__
+        password: ${{ secrets.TEST_PYPI_TOKEN }}
+        repository_url: https://test.pypi.org/legacy/
+
+  publish_pypi:
+    name: Publish to pypi.org
+    if: ${{ github.event_name == 'release' && success() }}
+    runs-on: ubuntu-latest
+    needs: [test, pre-commit]
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v1
+      with:
+        python-version: '3.7'
+    - name: Install Poetry
+      run: pip install poetry==1.1.6
+    - name: Build Package
+      run: poetry build
+#    - name: Publish to public PyPI
+#      uses: pypa/gh-action-pypi-publish@v1.4.2
+#      with:
+#        user: __token__
+#        password: ${{ secrets.PYPI_TOKEN }}
+#

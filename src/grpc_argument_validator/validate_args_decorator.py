@@ -1,11 +1,8 @@
 import functools
 import itertools
 import re
-from typing import Any
 from typing import Callable
 from typing import Dict
-from typing import Iterable
-from typing import Iterator
 from typing import List
 from typing import Optional
 

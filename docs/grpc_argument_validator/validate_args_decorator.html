@@ -28,6 +28,7 @@
 </summary>
 <pre><code class="python">import functools
 import itertools
+import re
 from typing import Callable
 from typing import Dict
 from typing import List
@@ -40,63 +41,6 @@ from grpc_argument_validator import AbstractArgumentValidator
 from grpc_argument_validator.argument_validators import NonDefaultValidator
 from grpc_argument_validator.argument_validators import NonEmptyValidator
 from grpc_argument_validator.argument_validators import UUIDBytesValidator
-
-
-def _recurse_validate(
-    message: Message,
-    name: str,
-    validators: List[AbstractArgumentValidator],
-    leading_parts_name: str = None,
-    is_optional: bool = False,
-):
-    errors = []
-    field_name_raw, *remaining_fields = name.split(&#34;.&#34;)
-    field_name = field_name_raw.rstrip(&#34;[]&#34;)
-    field_descriptor = message.DESCRIPTOR.fields_by_name[field_name]
-
-    full_name = field_name if leading_parts_name is None else f&#34;{leading_parts_name}.{field_name}&#34;
-    if (
-        field_descriptor.label != FieldDescriptor.LABEL_REPEATED
-        and field_descriptor.type == FieldDescriptor.TYPE_MESSAGE
-        and not message.HasField(field_name)
-    ):
-        if is_optional:
-            return []
-        return [f&#34;request must have {full_name}&#34;]
-
-    field_value = getattr(message, field_name)
-    if remaining_fields:
-        if field_descriptor.label == FieldDescriptor.LABEL_REPEATED:
-            for i, elem in enumerate(field_value):
-                errors.extend(
-                    _recurse_validate(
-                        message=elem,
-                        name=&#34;.&#34;.join(remaining_fields),
-                        leading_parts_name=f&#34;{full_name}[{i}]&#34;,
-                        validators=validators,
-                        is_optional=is_optional,
-                    )
-                )
-        else:
-            errors.extend(
-                _recurse_validate(
-                    message=field_value,
-                    name=&#34;.&#34;.join(remaining_fields),
-                    leading_parts_name=full_name,
-                    validators=validators,
-                    is_optional=is_optional,
-                )
-            )
-    else:
-        for v in validators:
-            if field_name_raw.endswith(&#34;[]&#34;) and field_descriptor.label == FieldDescriptor.LABEL_REPEATED:
-                for i, field_value_elem in enumerate(field_value):
-                    if not v.is_valid(field_value_elem, field_descriptor):
-                        errors.append(v.invalid_message(f&#34;{full_name}[{i}]&#34;))
-            else:
-                if not v.is_valid(field_value, field_descriptor):
-                    errors.append(v.invalid_message(full_name))
-    return errors
 
 
 def validate_args(
@@ -118,7 +62,8 @@ def validate_args(
     E.g. `foo.bar` where bar is a property of the Message in foo.
 
 
-    For lists the same notation can be used, for clarity `[]` can be added optionally. Both `foo.bar` and `foo[].bar` can be used, where bar is a property of the Message in the list foo.
+    For lists the same notation can be used, for clarity `[]` can be added optionally. Both `foo.bar` and `foo[].bar`
+    can be used, where bar is a property of the Message in the list foo.
 
         Parameters:
             has (Optional[List[str]]):
@@ -138,7 +83,8 @@ def validate_args(
             validators (Optional[Dict[str, AbstractArgumentValidator]]):
                 Dict mapping field names to validators
             optional_validators (Optional[Dict[str, AbstractArgumentValidator]]):
-                Dict mapping field names to validators, the fields can be None or validated using the specified validator
+                Dict mapping field names to validators, the fields can be None or validated using the specified
+                validator
 
         Returns:
             decorating_function (func): the decorating function wrapping the gRPC method function
@@ -170,6 +116,10 @@ def validate_args(
             optional_validators_value.keys(),
         )
     )
+    for field_name in field_names:
+        if not _is_valid_field_path(field_name):
+            raise ValueError(f&#34;Field name {field_name} does not adhere to Protobuf 3 language specification&#34;)
+
     if set(uuids_value + non_empty_value + non_default_value + list(validators_value.keys())).intersection(
         set(
             optional_uuids_value
@@ -213,7 +163,79 @@ def validate_args(
 
         return validate_wrapper
 
-    return decorating_function</code></pre>
+    return decorating_function
+
+
+def _recurse_validate(
+    message: Message,
+    name: str,
+    validators: List[AbstractArgumentValidator],
+    leading_parts_name: str = None,
+    is_optional: bool = False,
+):
+    errors = []
+    field_name_raw, *remaining_fields = name.split(&#34;.&#34;)
+    field_name = field_name_raw.rstrip(&#34;[]&#34;)
+
+    remaining_fields = [f for f in remaining_fields if f != &#34;&#34;]
+
+    if leading_parts_name is None and field_name == &#34;&#34;:
+        field_value = message
+        field_descriptor = message.DESCRIPTOR
+        full_name = message.DESCRIPTOR.name
+    else:
+        field_descriptor = message.DESCRIPTOR.fields_by_name[field_name]
+
+        full_name = field_name if leading_parts_name is None else f&#34;{leading_parts_name}.{field_name}&#34;
+        if (
+            field_descriptor.label != FieldDescriptor.LABEL_REPEATED
+            and field_descriptor.type == FieldDescriptor.TYPE_MESSAGE
+            and not message.HasField(field_name)
+        ):
+            if is_optional:
+                return []
+            return [f&#34;request must have {full_name}&#34;]
+
+        field_value = getattr(message, field_name)
+
+    if remaining_fields:
+        if field_descriptor.label == FieldDescriptor.LABEL_REPEATED:
+            for i, elem in enumerate(field_value):
+                errors.extend(
+                    _recurse_validate(
+                        message=elem,
+                        name=&#34;.&#34;.join(remaining_fields),
+                        leading_parts_name=f&#34;{full_name}[{i}]&#34;,
+                        validators=validators,
+                        is_optional=is_optional,
+                    )
+                )
+        else:
+            errors.extend(
+                _recurse_validate(
+                    message=field_value,
+                    name=&#34;.&#34;.join(remaining_fields),
+                    leading_parts_name=full_name,
+                    validators=validators,
+                    is_optional=is_optional,
+                )
+            )
+    else:
+        for v in validators:
+            if field_name_raw.endswith(&#34;[]&#34;) and field_descriptor.label == FieldDescriptor.LABEL_REPEATED:
+                for i, field_value_elem in enumerate(field_value):
+                    validation_result = v.check(f&#34;{full_name}[{i}]&#34;, field_value_elem, field_descriptor)
+                    if not validation_result.valid:
+                        errors.append(validation_result.invalid_reason)
+            else:
+                validation_result = v.check(full_name, field_value, field_descriptor)
+                if not validation_result.valid:
+                    errors.append(validation_result.invalid_reason)
+    return errors
+
+
+def _is_valid_field_path(path: str):
+    return re.match(r&#34;^(?:\.|\.?(?:[a-zA-Z][a-zA-Z_0-9]*\.)*(?:[a-zA-Z][a-zA-Z_0-9]*)(?:\[\])?)$&#34;, path) is not None</code></pre>
 </details>
 </section>
 <section>
@@ -224,13 +246,14 @@ def validate_args(
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="grpc_argument_validator.validate_args_decorator.validate_args"><code class="name flex">
-<span>def <span class="ident">validate_args</span></span>(<span>has: Optional[List[str]] = None, uuids: Optional[List[str]] = None, non_default: Optional[List[str]] = None, non_empty: Optional[List[str]] = None, optional_uuids: Optional[List[str]] = None, optional_non_empty: Optional[List[str]] = None, optional_non_default: Optional[List[str]] = None, validators: Optional[Dict[str, <a title="grpc_argument_validator.argument_validators.AbstractArgumentValidator" href="argument_validators.html#grpc_argument_validator.argument_validators.AbstractArgumentValidator">AbstractArgumentValidator</a>]] = None, optional_validators: Optional[Dict[str, <a title="grpc_argument_validator.argument_validators.AbstractArgumentValidator" href="argument_validators.html#grpc_argument_validator.argument_validators.AbstractArgumentValidator">AbstractArgumentValidator</a>]] = None) ‑> Callable</span>
+<span>def <span class="ident">validate_args</span></span>(<span>has: Union[List[str], NoneType] = None, uuids: Union[List[str], NoneType] = None, non_default: Union[List[str], NoneType] = None, non_empty: Union[List[str], NoneType] = None, optional_uuids: Union[List[str], NoneType] = None, optional_non_empty: Union[List[str], NoneType] = None, optional_non_default: Union[List[str], NoneType] = None, validators: Union[Dict[str, <a title="grpc_argument_validator.argument_validators.AbstractArgumentValidator" href="argument_validators.html#grpc_argument_validator.argument_validators.AbstractArgumentValidator">AbstractArgumentValidator</a>], NoneType] = None, optional_validators: Union[Dict[str, <a title="grpc_argument_validator.argument_validators.AbstractArgumentValidator" href="argument_validators.html#grpc_argument_validator.argument_validators.AbstractArgumentValidator">AbstractArgumentValidator</a>], NoneType] = None) ‑> Callable</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Decorator to validate Message type arguments for gRPC methods.</p>
 <p>Subfields can be separated by a <code>.</code>.</p>
 <p>E.g. <code>foo.bar</code> where bar is a property of the Message in foo.</p>
-<p>For lists the same notation can be used, for clarity <code>[]</code> can be added optionally. Both <code>foo.bar</code> and <code>foo[].bar</code> can be used, where bar is a property of the Message in the list foo.</p>
+<p>For lists the same notation can be used, for clarity <code>[]</code> can be added optionally. Both <code>foo.bar</code> and <code>foo[].bar</code>
+can be used, where bar is a property of the Message in the list foo.</p>
 <pre><code>Parameters:
     has (Optional[List[str]]):
         Fields the Message should contain
@@ -249,7 +272,8 @@ def validate_args(
     validators (Optional[Dict[str, AbstractArgumentValidator]]):
         Dict mapping field names to validators
     optional_validators (Optional[Dict[str, AbstractArgumentValidator]]):
-        Dict mapping field names to validators, the fields can be None or validated using the specified validator
+        Dict mapping field names to validators, the fields can be None or validated using the specified
+        validator
 
 Returns:
     decorating_function (func): the decorating function wrapping the gRPC method function
@@ -277,7 +301,8 @@ Returns:
     E.g. `foo.bar` where bar is a property of the Message in foo.
 
 
-    For lists the same notation can be used, for clarity `[]` can be added optionally. Both `foo.bar` and `foo[].bar` can be used, where bar is a property of the Message in the list foo.
+    For lists the same notation can be used, for clarity `[]` can be added optionally. Both `foo.bar` and `foo[].bar`
+    can be used, where bar is a property of the Message in the list foo.
 
         Parameters:
             has (Optional[List[str]]):
@@ -297,7 +322,8 @@ Returns:
             validators (Optional[Dict[str, AbstractArgumentValidator]]):
                 Dict mapping field names to validators
             optional_validators (Optional[Dict[str, AbstractArgumentValidator]]):
-                Dict mapping field names to validators, the fields can be None or validated using the specified validator
+                Dict mapping field names to validators, the fields can be None or validated using the specified
+                validator
 
         Returns:
             decorating_function (func): the decorating function wrapping the gRPC method function
@@ -329,6 +355,10 @@ Returns:
             optional_validators_value.keys(),
         )
     )
+    for field_name in field_names:
+        if not _is_valid_field_path(field_name):
+            raise ValueError(f&#34;Field name {field_name} does not adhere to Protobuf 3 language specification&#34;)
+
     if set(uuids_value + non_empty_value + non_default_value + list(validators_value.keys())).intersection(
         set(
             optional_uuids_value

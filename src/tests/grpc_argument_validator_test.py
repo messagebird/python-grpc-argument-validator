@@ -2,18 +2,21 @@ import unittest
 import uuid
 from dataclasses import dataclass
 from dataclasses import field
+from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
 from unittest.mock import MagicMock
 
 import grpc
+from google.protobuf.descriptor import FieldDescriptor
 from google.protobuf.message import Message
 from google.protobuf.wrappers_pb2 import BytesValue
 from google.protobuf.wrappers_pb2 import StringValue
 from grpc_argument_validator import AbstractArgumentValidator
 from grpc_argument_validator import RegexpValidator
 from grpc_argument_validator import validate_args
+from grpc_argument_validator.argument_validators import ValidationResult
 from tests.route_guide_protos.route_guide_pb2 import Area
 from tests.route_guide_protos.route_guide_pb2 import Path
 from tests.route_guide_protos.route_guide_pb2 import PLANET_EARTH
@@ -22,6 +25,16 @@ from tests.route_guide_protos.route_guide_pb2 import PlanetValue
 from tests.route_guide_protos.route_guide_pb2 import Point
 from tests.route_guide_protos.route_guide_pb2 import Rectangle
 from tests.route_guide_protos.route_guide_pb2 import Route
+
+
+class RouteValidator(AbstractArgumentValidator):
+    def check(self, name: str, value: Any, field_descriptor: FieldDescriptor) -> ValidationResult:
+        invalid_reasons = []
+        if len(value.path.points) == 0:
+            invalid_reasons.append(f"{name}.path.points should be non-empty")
+        if not (value.HasField("name") and value.name.value != ""):
+            invalid_reasons.append(f"{name}.name.value should be non-empty")
+        return ValidationResult(len(invalid_reasons) == 0, ", ".join(invalid_reasons))
 
 
 class TestGRPCTools(unittest.TestCase):
@@ -38,7 +51,7 @@ class TestGRPCTools(unittest.TestCase):
             uuids: List[str] = field(default_factory=list)
             optional_uuids: List[str] = field(default_factory=list)
             error_message: Optional[str] = None
-            decorator_error: bool = False
+            decorator_error_message: Optional[str] = None
             validators: Optional[Dict[str, AbstractArgumentValidator]] = None
             optional_validators: Optional[Dict[str, AbstractArgumentValidator]] = None
 
@@ -233,14 +246,20 @@ class TestGRPCTools(unittest.TestCase):
                 non_default=["planet.value"],
                 error=False,
             ),
-            TestCase(description="Test invalid args empty", proto=Path(), has=[], non_empty=[], decorator_error=True),
+            TestCase(
+                description="Test invalid args empty",
+                proto=Path(),
+                has=[],
+                non_empty=[],
+                decorator_error_message="Should provide at least one field to validate",
+            ),
             TestCase(
                 description="Test invalid args intersection required and optional",
                 proto=Route(),
                 optional_uuids=["uuid.value"],
                 uuids=["uuid.value"],
                 has=[],
-                decorator_error=True,
+                decorator_error_message="Overlap in mandatory and optional fields",
             ),
             TestCase(
                 description="Test invalid regex",
@@ -302,6 +321,30 @@ class TestGRPCTools(unittest.TestCase):
                 error=True,
                 error_message="tags must be non-empty",
             ),
+            TestCase(
+                description="Test base proto invalid route empty name",
+                proto=Route(path=Path(points=[Point()])),
+                has=[],
+                validators={".": RouteValidator()},
+                error=True,
+                error_message=r"Route.name.value should be non-empty",
+            ),
+            TestCase(
+                description="Test base proto invalid route empty points and empty name",
+                proto=Route(path=Path()),
+                has=[],
+                validators={".": RouteValidator()},
+                error=True,
+                error_message=r"Route.path.points should be non-empty, Route.name.value should be non-empty",
+            ),
+            TestCase(
+                description="Test base proto invalid route empty points",
+                proto=Route(name=StringValue(value="name")),
+                has=[],
+                validators={".": RouteValidator()},
+                error=True,
+                error_message=r"Route.path.points should be non-empty",
+            ),
         ]:
             with self.subTest(test_case.description):
 
@@ -321,8 +364,8 @@ class TestGRPCTools(unittest.TestCase):
                         def fn(self, field: Message, context: grpc.ServicerContext):
                             pass
 
-                except ValueError:
-                    assert test_case.decorator_error
+                except ValueError as e:
+                    assert str(e) == test_case.decorator_error_message
 
                 context = MagicMock()
                 context.abort.side_effect = Exception("invalid arg")

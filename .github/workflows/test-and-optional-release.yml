@@ -1,5 +1,5 @@
 # .github/workflows/test-pypi.yml
-name: Test and release on dev on PR
+name: Lint, test and optional release
 on:
   push:
     branches:
@@ -87,9 +87,9 @@ jobs:
       run: pip install poetry==1.1.6
     - name: Build Package
       run: poetry build
-#    - name: Publish to public PyPI
-#      uses: pypa/gh-action-pypi-publish@v1.4.2
-#      with:
-#        user: __token__
-#        password: ${{ secrets.PYPI_TOKEN }}
-#
+    - name: Publish to public PyPI
+      uses: pypa/gh-action-pypi-publish@v1.4.2
+      with:
+        user: __token__
+        password: ${{ secrets.PYPI_TOKEN }}
+

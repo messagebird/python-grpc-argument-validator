@@ -24,22 +24,23 @@
 <section id="section-intro">
 <p>Provides decorator to validate arguments in protobuf messages.</p>
 <p>Example:</p>
-<pre><code>from grpc_argument_validator import validate_args
-from grpc_argument_validator import AbstractArgumentValidator
+<pre><code>from google.protobuf.descriptor import FieldDescriptor
+from grpc_argument_validator import validate_args
+from grpc_argument_validator import AbstractArgumentValidator, ValidationResult
 
 class PathValidator(AbstractArgumentValidator):
-    def is_valid(self, value: Path, field_descriptor) -&gt; bool:
-        return len(value.points) &gt; 5
 
-    def invalid_message(self, name: str) -&gt; str:
-        return f&quot;path for '{name}' should be at least five points long&quot;
+    def check(self, name: str, value: Path, field_descriptor: FieldDescriptor) -&gt; ValidationResult:
+        if len(value.points) &gt; 5:
+            return ValidationResult(valid=True)
+        return ValidationResult(False, f&quot;path for '{name}' should be at least five points long&quot;)
 
-class RouteChecker(RouteCheckerServicer):
+class RouteService(RouteCheckerServicer):
     @validate_args(
         non_empty=[&quot;tags&quot;, &quot;tags[]&quot;, &quot;path.points&quot;],
         validators={&quot;path&quot;: PathValidator()},
     )
-    def Check(self, request: Route, context: grpc.ServicerContext):
+    def Create(self, request: Route, context: grpc.ServicerContext):
         return BoolValue(value=True)
 </code></pre>
 <details class="source">
@@ -51,27 +52,29 @@ Provides decorator to validate arguments in protobuf messages.
 
 Example:
 ```
+from google.protobuf.descriptor import FieldDescriptor
 from grpc_argument_validator import validate_args
-from grpc_argument_validator import AbstractArgumentValidator
+from grpc_argument_validator import AbstractArgumentValidator, ValidationResult
 
 class PathValidator(AbstractArgumentValidator):
-    def is_valid(self, value: Path, field_descriptor) -&gt; bool:
-        return len(value.points) &gt; 5
 
-    def invalid_message(self, name: str) -&gt; str:
-        return f&#34;path for &#39;{name}&#39; should be at least five points long&#34;
+    def check(self, name: str, value: Path, field_descriptor: FieldDescriptor) -&gt; ValidationResult:
+        if len(value.points) &gt; 5:
+            return ValidationResult(valid=True)
+        return ValidationResult(False, f&#34;path for &#39;{name}&#39; should be at least five points long&#34;)
 
-class RouteChecker(RouteCheckerServicer):
+class RouteService(RouteCheckerServicer):
     @validate_args(
         non_empty=[&#34;tags&#34;, &#34;tags[]&#34;, &#34;path.points&#34;],
         validators={&#34;path&#34;: PathValidator()},
     )
-    def Check(self, request: Route, context: grpc.ServicerContext):
+    def Create(self, request: Route, context: grpc.ServicerContext):
         return BoolValue(value=True)
 ```
 &#34;&#34;&#34;
 from .argument_validators import AbstractArgumentValidator
 from .argument_validators import RegexpValidator
+from .argument_validators import ValidationResult
 from .validate_args_decorator import validate_args</code></pre>
 </details>
 </section>

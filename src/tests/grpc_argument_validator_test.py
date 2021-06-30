@@ -143,7 +143,9 @@ class TestGRPCTools(unittest.TestCase):
                 description="Test without hi valid",
                 proto=Area(
                     message=StringValue(value="message"),
-                    rectangle=Rectangle(lo=Point(x=0, y=0, name=StringValue(value="point0")),),
+                    rectangle=Rectangle(
+                        lo=Point(x=0, y=0, name=StringValue(value="point0")),
+                    ),
                 ),
                 has=["message.value", "rectangle.lo"],
                 error=False,

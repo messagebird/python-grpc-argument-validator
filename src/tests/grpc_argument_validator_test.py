@@ -37,7 +37,7 @@ class RouteValidator(AbstractArgumentValidator):
         return ValidationResult(len(invalid_reasons) == 0, ", ".join(invalid_reasons))
 
 
-class TestGRPCTools(unittest.TestCase):
+class TestValidators(unittest.TestCase):
     def test_validate_args(self):
         @dataclass
         class TestCase:

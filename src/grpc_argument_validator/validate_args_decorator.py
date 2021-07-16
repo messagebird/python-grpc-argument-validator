@@ -13,6 +13,7 @@ from grpc_argument_validator import AbstractArgumentValidator
 from grpc_argument_validator.argument_validators import NonDefaultValidator
 from grpc_argument_validator.argument_validators import NonEmptyValidator
 from grpc_argument_validator.argument_validators import UUIDBytesValidator
+from grpc_argument_validator.field_path import is_valid_field_path
 
 
 def validate_args(
@@ -89,7 +90,7 @@ def validate_args(
         )
     )
     for field_name in field_names:
-        if not _is_valid_field_path(field_name):
+        if not is_valid_field_path(field_name):
             raise ValueError(
                 f"Field name {field_name} does not adhere to Protobuf 3 language specification, "
                 f"may be prepended with '.' or appended with '[]'. Alternatively, '.' should be used for "
@@ -208,7 +209,3 @@ def _recurse_validate(
                 if not validation_result.valid:
                     errors.append(validation_result.invalid_reason)
     return errors
-
-
-def _is_valid_field_path(path: str):
-    return re.match(r"^(?:\.|\.?(?:[a-zA-Z][a-zA-Z_0-9]*\.)*(?:[a-zA-Z][a-zA-Z_0-9]*)(?:\[\])?)$", path) is not None

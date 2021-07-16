@@ -39,6 +39,7 @@ import grpc
 from google.protobuf.descriptor import FieldDescriptor
 from google.protobuf.message import Message
 from grpc_argument_validator import AbstractStreamingArgumentValidator
+from grpc_argument_validator.field_path import is_valid_field_path
 from grpc_argument_validator.streaming_argument_validators import StreamingNonDefaultValidator
 from grpc_argument_validator.streaming_argument_validators import StreamingNonEmptyValidator
 from grpc_argument_validator.streaming_argument_validators import StreamingUUIDBytesValidator
@@ -119,7 +120,7 @@ def validate_streaming_args(
     )
 
     for field_name in field_names:
-        if not _is_valid_field_path(field_name):
+        if not is_valid_field_path(field_name):
             raise ValueError(
                 f&#34;Field name {field_name} does not adhere to Protobuf 3 language specification, &#34;
                 f&#34;may be prepended with &#39;.&#39; or appended with &#39;[]&#39;. Alternatively, &#39;.&#39; should be used for &#34;
@@ -243,11 +244,7 @@ def _recurse_validate(
                 validation_result = v.check(message_index, full_name, field_value, field_descriptor)
                 if not validation_result.valid:
                     errors.append(validation_result.invalid_reason)
-    return errors
-
-
-def _is_valid_field_path(path: str):
-    return re.match(r&#34;^(?:\.|\.?(?:[a-zA-Z][a-zA-Z_0-9]*\.)*(?:[a-zA-Z][a-zA-Z_0-9]*)(?:\[\])?)$&#34;, path) is not None</code></pre>
+    return errors</code></pre>
 </details>
 </section>
 <section>
@@ -369,7 +366,7 @@ Returns:
     )
 
     for field_name in field_names:
-        if not _is_valid_field_path(field_name):
+        if not is_valid_field_path(field_name):
             raise ValueError(
                 f&#34;Field name {field_name} does not adhere to Protobuf 3 language specification, &#34;
                 f&#34;may be prepended with &#39;.&#39; or appended with &#39;[]&#39;. Alternatively, &#39;.&#39; should be used for &#34;

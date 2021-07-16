@@ -3,14 +3,15 @@ import itertools
 import re
 from typing import Callable
 from typing import Dict
+from typing import Iterable
 from typing import List
 from typing import Optional
-from typing import Iterable
 
 import grpc
 from google.protobuf.descriptor import FieldDescriptor
 from google.protobuf.message import Message
 from grpc_argument_validator import AbstractStreamingArgumentValidator
+from grpc_argument_validator.field_path import is_valid_field_path
 from grpc_argument_validator.streaming_argument_validators import StreamingNonDefaultValidator
 from grpc_argument_validator.streaming_argument_validators import StreamingNonEmptyValidator
 from grpc_argument_validator.streaming_argument_validators import StreamingUUIDBytesValidator
@@ -91,7 +92,7 @@ def validate_streaming_args(
     )
 
     for field_name in field_names:
-        if not _is_valid_field_path(field_name):
+        if not is_valid_field_path(field_name):
             raise ValueError(
                 f"Field name {field_name} does not adhere to Protobuf 3 language specification, "
                 f"may be prepended with '.' or appended with '[]'. Alternatively, '.' should be used for "
@@ -216,7 +217,3 @@ def _recurse_validate(
                 if not validation_result.valid:
                     errors.append(validation_result.invalid_reason)
     return errors
-
-
-def _is_valid_field_path(path: str):
-    return re.match(r"^(?:\.|\.?(?:[a-zA-Z][a-zA-Z_0-9]*\.)*(?:[a-zA-Z][a-zA-Z_0-9]*)(?:\[\])?)$", path) is not None

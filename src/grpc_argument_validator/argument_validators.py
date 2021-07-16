@@ -2,22 +2,10 @@ import abc
 import re
 import typing
 import uuid
-from dataclasses import dataclass
 
 from google.protobuf.descriptor import FieldDescriptor
 
-
-@dataclass
-class ValidationResult:
-    """
-    Contains results for validation check.
-    """
-
-    valid: bool
-    """Whether the argument was valid."""
-
-    invalid_reason: typing.Optional[str] = None
-    """Reason for invalidity of the argument. Will be ``None`` if valid."""
+from .validation_result import ValidationResult
 
 
 class AbstractArgumentValidator(abc.ABC):

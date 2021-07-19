@@ -32,13 +32,14 @@ import typing
 import uuid
 
 from google.protobuf.descriptor import FieldDescriptor
+from google.protobuf.message import Message
 
 from .validation_result import ValidationResult
 
 
 class AbstractStreamingArgumentValidator(abc.ABC):
     &#34;&#34;&#34;
-    An abstract class that is the base for all argument validators
+    An abstract class that is the base for all streaming argument validators
     &#34;&#34;&#34;
 
     @abc.abstractmethod
@@ -61,7 +62,7 @@ class AbstractStreamingArgumentValidator(abc.ABC):
 
 
 class StreamingUUIDBytesValidator(AbstractStreamingArgumentValidator):
-    &#34;&#34;&#34;Class that ensures the provided value is a valid UUID&#34;&#34;&#34;
+    &#34;&#34;&#34;Ensures all the provided values in the stream are valid UUIDs&#34;&#34;&#34;
 
     def check(
         self, message_index: int, name: str, value: typing.Any, field_descriptor: FieldDescriptor
@@ -69,35 +70,35 @@ class StreamingUUIDBytesValidator(AbstractStreamingArgumentValidator):
         try:
             uuid.UUID(bytes=value)
         except (ValueError, TypeError):
-            return ValidationResult(False, f&#34;in message request {message_index} {name} must be a valid UUID&#34;)
+            return ValidationResult(False, f&#34;{name} must be a valid UUID in message request index {message_index}&#34;,)
         return ValidationResult(True)
 
 
 class StreamingNonDefaultValidator(AbstractStreamingArgumentValidator):
-    &#34;&#34;&#34;Ensures the provided value is not the default value for this field type&#34;&#34;&#34;
+    &#34;&#34;&#34;Ensures all the provided values in the stream are non-empty not the default value for this field type&#34;&#34;&#34;
 
     def check(
         self, message_index: int, name: str, value: typing.Any, field_descriptor: FieldDescriptor
     ) -&gt; ValidationResult:
         if value != field_descriptor.default_value:
             return ValidationResult(True)
-        return ValidationResult(False, f&#34;in message request {message_index} {name} must have non-default value&#34;)
+        return ValidationResult(False, f&#34;{name} must have non-default value in message request index {message_index}&#34;)
 
 
 class StreamingNonEmptyValidator(AbstractStreamingArgumentValidator):
-    &#34;&#34;&#34;Ensures the provided value is non-empty&#34;&#34;&#34;
+    &#34;&#34;&#34;Ensures all the provided values in the stream are non-empty&#34;&#34;&#34;
 
     def check(
         self, message_index: int, name: str, value: typing.Any, field_descriptor: FieldDescriptor
     ) -&gt; ValidationResult:
         if len(value) &gt; 0:
             return ValidationResult(True)
-        return ValidationResult(False, f&#34;in message request {message_index} {name} must be non-empty&#34;)
+        return ValidationResult(False, f&#34;{name} must be non-empty in message request index {message_index}&#34;,)
 
 
 class StreamingRegexpValidator(AbstractStreamingArgumentValidator):
     &#34;&#34;&#34;
-    Matches the input value against the provided regex.
+    Matches all input values in the stream against the provided regex.
 
     Parameters:
         pattern (str): Regexp pattern to match.
@@ -112,7 +113,7 @@ class StreamingRegexpValidator(AbstractStreamingArgumentValidator):
         if re.match(self._pattern, value) is not None:
             return ValidationResult(True)
         return ValidationResult(
-            False, f&#34;in message request {message_index} {name} must match regexp pattern: {self._pattern}&#34;
+            False, f&#34;{name} must match regexp pattern: {self._pattern} in message request index {message_index}&#34;
         )</code></pre>
 </details>
 </section>
@@ -129,14 +130,14 @@ class StreamingRegexpValidator(AbstractStreamingArgumentValidator):
 <span>class <span class="ident">AbstractStreamingArgumentValidator</span></span>
 </code></dt>
 <dd>
-<div class="desc"><p>An abstract class that is the base for all argument validators</p></div>
+<div class="desc"><p>An abstract class that is the base for all streaming argument validators</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class AbstractStreamingArgumentValidator(abc.ABC):
     &#34;&#34;&#34;
-    An abstract class that is the base for all argument validators
+    An abstract class that is the base for all streaming argument validators
     &#34;&#34;&#34;
 
     @abc.abstractmethod
@@ -213,20 +214,20 @@ def check(
 <span>class <span class="ident">StreamingNonDefaultValidator</span></span>
 </code></dt>
 <dd>
-<div class="desc"><p>Ensures the provided value is not the default value for this field type</p></div>
+<div class="desc"><p>Ensures all the provided values in the stream are non-empty not the default value for this field type</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class StreamingNonDefaultValidator(AbstractStreamingArgumentValidator):
-    &#34;&#34;&#34;Ensures the provided value is not the default value for this field type&#34;&#34;&#34;
+    &#34;&#34;&#34;Ensures all the provided values in the stream are non-empty not the default value for this field type&#34;&#34;&#34;
 
     def check(
         self, message_index: int, name: str, value: typing.Any, field_descriptor: FieldDescriptor
     ) -&gt; ValidationResult:
         if value != field_descriptor.default_value:
             return ValidationResult(True)
-        return ValidationResult(False, f&#34;in message request {message_index} {name} must have non-default value&#34;)</code></pre>
+        return ValidationResult(False, f&#34;{name} must have non-default value in message request index {message_index}&#34;)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -246,20 +247,20 @@ def check(
 <span>class <span class="ident">StreamingNonEmptyValidator</span></span>
 </code></dt>
 <dd>
-<div class="desc"><p>Ensures the provided value is non-empty</p></div>
+<div class="desc"><p>Ensures all the provided values in the stream are non-empty</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class StreamingNonEmptyValidator(AbstractStreamingArgumentValidator):
-    &#34;&#34;&#34;Ensures the provided value is non-empty&#34;&#34;&#34;
+    &#34;&#34;&#34;Ensures all the provided values in the stream are non-empty&#34;&#34;&#34;
 
     def check(
         self, message_index: int, name: str, value: typing.Any, field_descriptor: FieldDescriptor
     ) -&gt; ValidationResult:
         if len(value) &gt; 0:
             return ValidationResult(True)
-        return ValidationResult(False, f&#34;in message request {message_index} {name} must be non-empty&#34;)</code></pre>
+        return ValidationResult(False, f&#34;{name} must be non-empty in message request index {message_index}&#34;,)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -280,7 +281,7 @@ def check(
 <span>(</span><span>pattern: str)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Matches the input value against the provided regex.</p>
+<div class="desc"><p>Matches all input values in the stream against the provided regex.</p>
 <h2 id="parameters">Parameters</h2>
 <p>pattern (str): Regexp pattern to match.</p></div>
 <details class="source">
@@ -289,7 +290,7 @@ def check(
 </summary>
 <pre><code class="python">class StreamingRegexpValidator(AbstractStreamingArgumentValidator):
     &#34;&#34;&#34;
-    Matches the input value against the provided regex.
+    Matches all input values in the stream against the provided regex.
 
     Parameters:
         pattern (str): Regexp pattern to match.
@@ -304,7 +305,7 @@ def check(
         if re.match(self._pattern, value) is not None:
             return ValidationResult(True)
         return ValidationResult(
-            False, f&#34;in message request {message_index} {name} must match regexp pattern: {self._pattern}&#34;
+            False, f&#34;{name} must match regexp pattern: {self._pattern} in message request index {message_index}&#34;
         )</code></pre>
 </details>
 <h3>Ancestors</h3>
@@ -325,13 +326,13 @@ def check(
 <span>class <span class="ident">StreamingUUIDBytesValidator</span></span>
 </code></dt>
 <dd>
-<div class="desc"><p>Class that ensures the provided value is a valid UUID</p></div>
+<div class="desc"><p>Ensures all the provided values in the stream are valid UUIDs</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class StreamingUUIDBytesValidator(AbstractStreamingArgumentValidator):
-    &#34;&#34;&#34;Class that ensures the provided value is a valid UUID&#34;&#34;&#34;
+    &#34;&#34;&#34;Ensures all the provided values in the stream are valid UUIDs&#34;&#34;&#34;
 
     def check(
         self, message_index: int, name: str, value: typing.Any, field_descriptor: FieldDescriptor
@@ -339,7 +340,7 @@ def check(
         try:
             uuid.UUID(bytes=value)
         except (ValueError, TypeError):
-            return ValidationResult(False, f&#34;in message request {message_index} {name} must be a valid UUID&#34;)
+            return ValidationResult(False, f&#34;{name} must be a valid UUID in message request index {message_index}&#34;,)
         return ValidationResult(True)</code></pre>
 </details>
 <h3>Ancestors</h3>

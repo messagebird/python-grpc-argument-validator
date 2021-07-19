@@ -29,8 +29,8 @@ class TestValidators(unittest.TestCase):
             error: bool = False
             non_empty: List[str] = field(default_factory=list)
             non_default: List[str] = field(default_factory=list)
-            optional_non_default: List[str] = field(default_factory=list)
             uuids: List[str] = field(default_factory=list)
+            optional_non_default: List[str] = field(default_factory=list)
             optional_uuids: List[str] = field(default_factory=list)
             error_message: Optional[str] = None
             decorator_error_message: Optional[str] = None
@@ -38,7 +38,7 @@ class TestValidators(unittest.TestCase):
             optional_validators: Optional[Dict[str, AbstractStreamingArgumentValidator]] = None
 
         for test_case in [
-            TestCase(description="Test no stream", proto_stream=[], has=[],),
+            TestCase(description="Test no stream", proto_stream=[], has=[]),
             TestCase(
                 description="Test field available in every part of streaming request",
                 has=["name"],
@@ -54,19 +54,25 @@ class TestValidators(unittest.TestCase):
             TestCase(
                 description="Test field uuid available in every part of streaming request",
                 proto_stream=[
-                    Area(uuid=BytesValue(value=uuid.uuid4().bytes),),
-                    Area(uuid=BytesValue(value=uuid.uuid4().bytes),),
+                    Area(uuid=BytesValue(value=uuid.uuid4().bytes)),
+                    Area(uuid=BytesValue(value=uuid.uuid4().bytes)),
                 ],
                 has=[],
                 uuids=["uuid.value"],
             ),
             TestCase(
                 description="Test field uuid not available in every part of streaming request",
-                proto_stream=[Area(uuid=BytesValue(value=uuid.uuid4().bytes),), Area(),],
+                proto_stream=[Area(uuid=BytesValue(value=uuid.uuid4().bytes)), Area()],
                 has=[],
                 uuids=["uuid.value"],
                 error=True,
                 error_message="uuid.value must be a valid UUID in message request index 1",
+            ),
+            TestCase(
+                description="Test optional uuid not available in every part of streaming request",
+                proto_stream=[Area(uuid=BytesValue(value=uuid.uuid4().bytes)), Area()],
+                has=[],
+                optional_uuids=["uuid.value"],
             ),
             TestCase(
                 description="Test regex matchign every part of streaming request",

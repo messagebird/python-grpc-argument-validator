@@ -33,29 +33,6 @@ class AbstractStreamingArgumentValidator(abc.ABC):
         pass
 
 
-class StreamingHasFieldValidator(AbstractStreamingArgumentValidator):
-    """
-    Checks if all input values in the stream have the specified fields
-
-    Parameters:
-        field name (str): field name to check.
-    """
-
-    def __init__(self, field_name: str) -> None:
-        self._field_name = field_name
-
-    def check(
-        self, message_index: int, name: str, value: typing.Any, field_descriptor: FieldDescriptor
-    ) -> ValidationResult:
-        try:
-            getattr(value, self._field_name)
-        except AttributeError:
-            raise Exception(f"{name} doesn't have a field {self._field_name}")
-        if isinstance(value, Message) and not value.HasField(self._field_name):
-            return ValidationResult(False, f"{self._field_name} must be set in message request index {message_index}")
-        return ValidationResult(True)
-
-
 class StreamingUUIDBytesValidator(AbstractStreamingArgumentValidator):
     """Ensures all the provided values in the stream are valid UUIDs"""
 

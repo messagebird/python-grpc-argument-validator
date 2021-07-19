@@ -49,7 +49,7 @@ class TestValidators(unittest.TestCase):
                 has=["name"],
                 proto_stream=[Point(name=StringValue(value="name")), Point()],
                 error=True,
-                error_message="name must be set in message request index 1",
+                error_message="request must have name",
             ),
             TestCase(
                 description="Test field uuid available in every part of streaming request",
@@ -66,7 +66,7 @@ class TestValidators(unittest.TestCase):
                 has=[],
                 uuids=["uuid.value"],
                 error=True,
-                error_message="uuid.value must be a valid UUID in message request index 1",
+                error_message="request must have uuid",
             ),
             TestCase(
                 description="Test optional uuid not available in every part of streaming request",
@@ -75,18 +75,12 @@ class TestValidators(unittest.TestCase):
                 optional_uuids=["uuid.value"],
             ),
             TestCase(
-                description="Test regex matchign every part of streaming request",
+                description="Test optional uuid not available in every part of streaming request",
+                proto_stream=[Area(uuid=BytesValue(value=uuid.uuid4().bytes)), Area(uuid=BytesValue())],
                 has=[],
-                proto_stream=[Point(name=StringValue(value="1234")), Point(name=StringValue(value="567890"))],
-                validators={"name.value": StreamingRegexpValidator(r"\d+")},
-            ),
-            TestCase(
-                description="Test regex not matching every part of streaming request",
-                has=[],
-                proto_stream=[Point(name=StringValue(value="1234")), Point(name=StringValue(value="another name"))],
-                validators={"name.value": StreamingRegexpValidator(r"\d+")},
+                optional_uuids=["uuid.value"],
                 error=True,
-                error_message=r"name.value must match regexp pattern: \d+ in message request index 1",
+                error_message="uuid.value must be a valid UUID in message request index 1",
             ),
             TestCase(
                 description="Test non-default check in every part of streaming request",
@@ -115,6 +109,20 @@ class TestValidators(unittest.TestCase):
                 non_empty=["name.value"],
                 error=True,
                 error_message="name.value must be non-empty in message request index 0",
+            ),
+            TestCase(
+                description="Test regex matchign every part of streaming request",
+                has=[],
+                proto_stream=[Point(name=StringValue(value="1234")), Point(name=StringValue(value="567890"))],
+                validators={"name.value": StreamingRegexpValidator(r"\d+")},
+            ),
+            TestCase(
+                description="Test regex not matching every part of streaming request",
+                has=[],
+                proto_stream=[Point(name=StringValue(value="1234")), Point(name=StringValue(value="another name"))],
+                validators={"name.value": StreamingRegexpValidator(r"\d+")},
+                error=True,
+                error_message=r"name.value must match regexp pattern: \d+ in message request index 1",
             ),
         ]:
             with self.subTest(test_case.description):

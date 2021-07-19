@@ -11,7 +11,6 @@ from google.protobuf.descriptor import FieldDescriptor
 from google.protobuf.message import Message
 from grpc_argument_validator import AbstractStreamingArgumentValidator
 from grpc_argument_validator.fields import validate_field_names
-from grpc_argument_validator.streaming_argument_validators import StreamingHasFieldValidator
 from grpc_argument_validator.streaming_argument_validators import StreamingNonDefaultValidator
 from grpc_argument_validator.streaming_argument_validators import StreamingNonEmptyValidator
 from grpc_argument_validator.streaming_argument_validators import StreamingUUIDBytesValidator
@@ -65,6 +64,7 @@ def validate_streaming_args(
     """
     if all(arg is None for arg in locals().values()):
         raise ValueError("Should provide at least one field to validate")
+    has_value = has or []
 
     optional_uuids_value = optional_uuids or []
     optional_non_empty_value = optional_non_empty or []
@@ -75,17 +75,9 @@ def validate_streaming_args(
     non_empty_value = non_empty or []
     non_default_value = non_default or []
     validators_value = validators or dict()
-
-    for value in has or []:
-        *path, value_name = value.split(".")
-        if not path:
-            path_str = "."
-        else:
-            path_str = ".".join(path)
-        validators_value[path_str] = StreamingHasFieldValidator(value_name)
-
     field_names = list(
         itertools.chain(
+            has_value,
             uuids_value,
             optional_uuids_value,
             non_empty_value,
@@ -118,6 +110,12 @@ def validate_streaming_args(
 
                 for field_name in field_names:
                     field_validators: List[AbstractStreamingArgumentValidator] = []
+                    is_optional = (
+                        field_name in optional_non_empty_value
+                        or field_name in optional_uuids_value
+                        or field_name in optional_non_default_value
+                        or field_name in optional_validators_value
+                    )
                     if field_name in uuids_value + optional_uuids_value:
                         field_validators.append(StreamingUUIDBytesValidator())
                     if field_name in non_empty_value + optional_non_empty_value:
@@ -130,7 +128,13 @@ def validate_streaming_args(
                             field_validators.append(validator)
 
                     errors.extend(
-                        _recurse_validate(message_index, request, name=field_name, validators=field_validators,)
+                        _recurse_validate(
+                            message_index,
+                            request,
+                            name=field_name,
+                            validators=field_validators,
+                            is_optional=is_optional,
+                        )
                     )
                 if len(errors) > 0:
                     context.abort(grpc.StatusCode.INVALID_ARGUMENT, ", ".join(errors)[:1000])
@@ -153,6 +157,7 @@ def _recurse_validate(
     name: str,
     validators: List[AbstractStreamingArgumentValidator],
     leading_parts_name: str = None,
+    is_optional: bool = False,
 ):
     errors = []
     field_name_raw, *remaining_fields = name.split(".")
@@ -166,7 +171,17 @@ def _recurse_validate(
         full_name = message.DESCRIPTOR.name
     else:
         field_descriptor = message.DESCRIPTOR.fields_by_name[field_name]
+
         full_name = field_name if leading_parts_name is None else f"{leading_parts_name}.{field_name}"
+        if (
+            field_descriptor.label != FieldDescriptor.LABEL_REPEATED
+            and field_descriptor.type == FieldDescriptor.TYPE_MESSAGE
+            and not message.HasField(field_name)
+        ):
+            if is_optional:
+                return []
+            return [f"request must have {full_name}"]
+
         field_value = getattr(message, field_name)
 
     if remaining_fields:

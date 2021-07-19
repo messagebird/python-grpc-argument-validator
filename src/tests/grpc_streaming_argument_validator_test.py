@@ -20,7 +20,7 @@ from tests.route_guide_protos.route_guide_pb2 import Point
 
 
 class TestValidators(unittest.TestCase):
-    def test_validate_args(self):
+    def test_validate_streaming_args(self):
         @dataclass
         class TestCase:
             description: str
@@ -69,7 +69,7 @@ class TestValidators(unittest.TestCase):
                 error_message="uuid.value must be a valid UUID in message request index 1",
             ),
             TestCase(
-                description="Test regex every part of streaming request",
+                description="Test regex matchign every part of streaming request",
                 has=[],
                 proto_stream=[Point(name=StringValue(value="1234")), Point(name=StringValue(value="567890"))],
                 validators={"name.value": StreamingRegexpValidator(r"\d+")},
@@ -81,6 +81,34 @@ class TestValidators(unittest.TestCase):
                 validators={"name.value": StreamingRegexpValidator(r"\d+")},
                 error=True,
                 error_message=r"name.value must match regexp pattern: \d+ in message request index 1",
+            ),
+            TestCase(
+                description="Test non-default check in every part of streaming request",
+                proto_stream=[Point(name=StringValue(value="1234")), Point(name=StringValue(value="56789"))],
+                has=[],
+                non_default=["name.value"],
+            ),
+            TestCase(
+                description="Test non-default check invalid in every part of streaming request",
+                proto_stream=[Point(name=StringValue(value="")), Point(name=StringValue(value="56789"))],
+                has=[],
+                non_default=["name.value"],
+                error=True,
+                error_message="name.value must have non-default value in message request index 0",
+            ),
+            TestCase(
+                description="Test non-empty check in every part of streaming request",
+                proto_stream=[Point(name=StringValue(value="1234")), Point(name=StringValue(value="56789"))],
+                has=[],
+                non_empty=["name.value"],
+            ),
+            TestCase(
+                description="Test non-empty check invalid in every part of streaming request",
+                proto_stream=[Point(name=StringValue(value="")), Point(name=StringValue(value="56789"))],
+                has=[],
+                non_empty=["name.value"],
+                error=True,
+                error_message="name.value must be non-empty in message request index 0",
             ),
         ]:
             with self.subTest(test_case.description):

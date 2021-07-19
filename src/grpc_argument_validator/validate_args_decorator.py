@@ -13,7 +13,7 @@ from grpc_argument_validator import AbstractArgumentValidator
 from grpc_argument_validator.argument_validators import NonDefaultValidator
 from grpc_argument_validator.argument_validators import NonEmptyValidator
 from grpc_argument_validator.argument_validators import UUIDBytesValidator
-from grpc_argument_validator.field_path import is_valid_field_path
+from grpc_argument_validator.fields import validate_field_names
 
 
 def validate_args(
@@ -89,22 +89,17 @@ def validate_args(
             optional_validators_value.keys(),
         )
     )
-    for field_name in field_names:
-        if not is_valid_field_path(field_name):
-            raise ValueError(
-                f"Field name {field_name} does not adhere to Protobuf 3 language specification, "
-                f"may be prepended with '.' or appended with '[]'. Alternatively, '.' should be used for "
-                f"performing validations on the 'root' proto."
-            )
+    validate_field_names(field_names)
 
-    if set(uuids_value + non_empty_value + non_default_value + list(validators_value.keys())).intersection(
-        set(
-            optional_uuids_value
-            + optional_non_empty_value
-            + optional_non_default_value
-            + list(optional_validators_value.keys())
-        )
-    ):
+    mandatory_fields = set(uuids_value + non_empty_value + non_default_value + list(validators_value.keys()))
+    optional_fields = set(
+        optional_uuids_value
+        + optional_non_empty_value
+        + optional_non_default_value
+        + list(optional_validators_value.keys())
+    )
+
+    if mandatory_fields.intersection(optional_fields):
         raise ValueError("Overlap in mandatory and optional fields")
 
     def decorating_function(func):

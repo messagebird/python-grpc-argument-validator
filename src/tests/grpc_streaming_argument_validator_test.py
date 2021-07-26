@@ -138,7 +138,7 @@ class TestStreamingValidators(unittest.TestCase):
                 error_message="name.value must be non-empty",
             ),
             TestCase(
-                description="Test regex matchign every part of streaming request",
+                description="Test regex matching every part of streaming request",
                 has=[],
                 proto_stream=[Point(name=StringValue(value="1234")), Point(name=StringValue(value="567890"))],
                 validators={"name.value": RegexpValidator(r"\d+")},

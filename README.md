@@ -41,11 +41,11 @@ pip install grpc-argument-validator
 ```python
 from google.protobuf.descriptor import FieldDescriptor
 from grpc_argument_validator import validate_args
-from grpc_argument_validator import AbstractArgumentValidator, ValidationResult
+from grpc_argument_validator import AbstractArgumentValidator, ValidationResult, ValidationContext
 
 class PathValidator(AbstractArgumentValidator):
 
-    def check(self, name: str, value: Path, field_descriptor: FieldDescriptor) -> ValidationResult:
+    def check(self, name: str, value: Path, field_descriptor: FieldDescriptor, validation_context: ValidationContext) -> ValidationResult:
         if len(value.points) > 5:
             return ValidationResult(valid=True)
         return ValidationResult(False, f"path for '{name}' should be at least five points long")

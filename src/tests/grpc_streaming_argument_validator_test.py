@@ -2,6 +2,7 @@ import unittest
 import uuid
 from dataclasses import dataclass
 from dataclasses import field
+from typing import Any
 from typing import Dict
 from typing import Iterable
 from typing import List
@@ -9,17 +10,43 @@ from typing import Optional
 from unittest.mock import MagicMock
 
 import grpc
+from google.protobuf.descriptor import FieldDescriptor
 from google.protobuf.message import Message
 from google.protobuf.wrappers_pb2 import BytesValue
 from google.protobuf.wrappers_pb2 import StringValue
-from grpc_argument_validator import AbstractStreamingArgumentValidator
-from grpc_argument_validator import validate_streaming_args
-from grpc_argument_validator.streaming_argument_validators import StreamingRegexpValidator
+from grpc_argument_validator import AbstractArgumentValidator
+from grpc_argument_validator import RegexpValidator
+from grpc_argument_validator import validate_args
+from grpc_argument_validator import ValidationContext
+from grpc_argument_validator import ValidationResult
 from tests.route_guide_protos.route_guide_pb2 import Area
+from tests.route_guide_protos.route_guide_pb2 import Path
 from tests.route_guide_protos.route_guide_pb2 import Point
 
 
-class TestValidators(unittest.TestCase):
+class StreamingPathValidator(AbstractArgumentValidator):
+    def __init__(self, first_number_of_points: int, second_number_of_points: int):
+        self._first_number_of_points = first_number_of_points
+        self._second_number_of_points = second_number_of_points
+
+    def check(
+        self, name: str, value: Any, field_descriptor: FieldDescriptor, validation_context: ValidationContext
+    ) -> ValidationResult:
+        if not validation_context.is_streaming:
+            return ValidationResult(False, "request must be a streaming request")
+
+        if validation_context.streaming_message_index == 0:
+            if len(value.points) != self._first_number_of_points:
+                return ValidationResult(False, f"first path should have {self._first_number_of_points} points")
+
+        if validation_context.streaming_message_index == 1:
+            if len(value.points) != self._second_number_of_points:
+                return ValidationResult(False, f"second path should have {self._second_number_of_points} points")
+
+        return ValidationResult(True)
+
+
+class TestStreamingValidators(unittest.TestCase):
     def test_validate_streaming_args(self):
         @dataclass
         class TestCase:
@@ -34,8 +61,8 @@ class TestValidators(unittest.TestCase):
             optional_uuids: List[str] = field(default_factory=list)
             error_message: Optional[str] = None
             decorator_error_message: Optional[str] = None
-            validators: Optional[Dict[str, AbstractStreamingArgumentValidator]] = None
-            optional_validators: Optional[Dict[str, AbstractStreamingArgumentValidator]] = None
+            validators: Optional[Dict[str, AbstractArgumentValidator]] = None
+            optional_validators: Optional[Dict[str, AbstractArgumentValidator]] = None
 
         for test_case in [
             TestCase(description="Test no stream", proto_stream=[], has=[]),
@@ -80,7 +107,7 @@ class TestValidators(unittest.TestCase):
                 has=[],
                 optional_uuids=["uuid.value"],
                 error=True,
-                error_message="uuid.value must be a valid UUID in message request index 1",
+                error_message="uuid.value must be a valid UUID",
             ),
             TestCase(
                 description="Test non-default check in every part of streaming request",
@@ -94,7 +121,7 @@ class TestValidators(unittest.TestCase):
                 has=[],
                 non_default=["name.value"],
                 error=True,
-                error_message="name.value must have non-default value in message request index 0",
+                error_message="name.value must have non-default value",
             ),
             TestCase(
                 description="Test non-empty check in every part of streaming request",
@@ -108,28 +135,42 @@ class TestValidators(unittest.TestCase):
                 has=[],
                 non_empty=["name.value"],
                 error=True,
-                error_message="name.value must be non-empty in message request index 0",
+                error_message="name.value must be non-empty",
             ),
             TestCase(
                 description="Test regex matchign every part of streaming request",
                 has=[],
                 proto_stream=[Point(name=StringValue(value="1234")), Point(name=StringValue(value="567890"))],
-                validators={"name.value": StreamingRegexpValidator(r"\d+")},
+                validators={"name.value": RegexpValidator(r"\d+")},
             ),
             TestCase(
                 description="Test regex not matching every part of streaming request",
                 has=[],
                 proto_stream=[Point(name=StringValue(value="1234")), Point(name=StringValue(value="another name"))],
-                validators={"name.value": StreamingRegexpValidator(r"\d+")},
+                validators={"name.value": RegexpValidator(r"\d+")},
                 error=True,
-                error_message=r"name.value must match regexp pattern: \d+ in message request index 1",
+                error_message=r"name.value must match regexp pattern: \d+",
+            ),
+            TestCase(
+                description="Test iteration specific validation",
+                has=[],
+                proto_stream=[Path(points=[Point(), Point(), Point()]), Path(points=[Point(), Point()]),],
+                validators={".": StreamingPathValidator(3, 2)},
+            ),
+            TestCase(
+                description="Test iteration specific validation",
+                has=[],
+                proto_stream=[Path(points=[Point(), Point(), Point()]), Path(points=[Point(), Point()]),],
+                validators={".": StreamingPathValidator(3, 3)},
+                error=True,
+                error_message="second path should have 3 points",
             ),
         ]:
             with self.subTest(test_case.description):
                 try:
 
                     class C:
-                        @validate_streaming_args(
+                        @validate_args(
                             has=test_case.has,
                             uuids=test_case.uuids,
                             non_empty=test_case.non_empty,

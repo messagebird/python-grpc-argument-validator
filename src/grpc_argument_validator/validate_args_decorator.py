@@ -3,8 +3,10 @@ import itertools
 import re
 from typing import Callable
 from typing import Dict
+from typing import Iterable
 from typing import List
 from typing import Optional
+from typing import Union
 
 import grpc
 from google.protobuf.descriptor import FieldDescriptor
@@ -14,6 +16,7 @@ from grpc_argument_validator.argument_validators import NonDefaultValidator
 from grpc_argument_validator.argument_validators import NonEmptyValidator
 from grpc_argument_validator.argument_validators import UUIDBytesValidator
 from grpc_argument_validator.fields import validate_field_names
+from grpc_argument_validator.validation_context import ValidationContext
 
 
 def validate_args(
@@ -103,10 +106,8 @@ def validate_args(
         raise ValueError("Overlap in mandatory and optional fields")
 
     def decorating_function(func):
-        @functools.wraps(func)
-        def validate_wrapper(self, request: Message, context: grpc.ServicerContext):
+        def validate_message(request: Message, context: grpc.ServicerContext, validation_context: ValidationContext):
             errors = []
-
             for field_name in field_names:
                 field_validators: List[AbstractArgumentValidator] = []
                 is_optional = (
@@ -127,11 +128,29 @@ def validate_args(
                         field_validators.append(validator)
 
                 errors.extend(
-                    _recurse_validate(request, name=field_name, validators=field_validators, is_optional=is_optional)
+                    _recurse_validate(
+                        request,
+                        name=field_name,
+                        validators=field_validators,
+                        is_optional=is_optional,
+                        validation_context=validation_context,
+                    )
                 )
             if len(errors) > 0:
                 context.abort(grpc.StatusCode.INVALID_ARGUMENT, ", ".join(errors)[:1000])
-            return func(self, request, context)
+
+        def validate_streaming(requests: Iterable[Message], context: grpc.ServicerContext):
+            for i, req in enumerate(requests):
+                validate_message(req, context, ValidationContext(is_streaming=True, streaming_message_index=i))
+                yield req
+
+        @functools.wraps(func)
+        def validate_wrapper(self, request: Union[Message, Iterable[Message]], context: grpc.ServicerContext):
+            if isinstance(request, Iterable):
+                return func(self, validate_streaming(request, context), context)
+            else:
+                validate_message(request, context, ValidationContext(is_streaming=False, streaming_message_index=None))
+                return func(self, request, context)
 
         return validate_wrapper
 
@@ -141,6 +160,7 @@ def validate_args(
 def _recurse_validate(
     message: Message,
     name: str,
+    validation_context: ValidationContext,
     validators: List[AbstractArgumentValidator],
     leading_parts_name: str = None,
     is_optional: bool = False,
@@ -180,6 +200,7 @@ def _recurse_validate(
                         leading_parts_name=f"{full_name}[{i}]",
                         validators=validators,
                         is_optional=is_optional,
+                        validation_context=validation_context,
                     )
                 )
         else:
@@ -190,17 +211,20 @@ def _recurse_validate(
                     leading_parts_name=full_name,
                     validators=validators,
                     is_optional=is_optional,
+                    validation_context=validation_context,
                 )
             )
     else:
         for v in validators:
             if field_name_raw.endswith("[]") and field_descriptor.label == FieldDescriptor.LABEL_REPEATED:
                 for i, field_value_elem in enumerate(field_value):  # type: ignore
-                    validation_result = v.check(f"{full_name}[{i}]", field_value_elem, field_descriptor)
+                    validation_result = v.check(
+                        f"{full_name}[{i}]", field_value_elem, field_descriptor, validation_context
+                    )
                     if not validation_result.valid:
                         errors.append(validation_result.invalid_reason)
             else:
-                validation_result = v.check(full_name, field_value, field_descriptor)
+                validation_result = v.check(full_name, field_value, field_descriptor, validation_context)
                 if not validation_result.valid:
                     errors.append(validation_result.invalid_reason)
     return errors

@@ -16,6 +16,7 @@ from google.protobuf.wrappers_pb2 import StringValue
 from grpc_argument_validator import AbstractArgumentValidator
 from grpc_argument_validator import RegexpValidator
 from grpc_argument_validator import validate_args
+from grpc_argument_validator.argument_validators import ValidationContext
 from grpc_argument_validator.argument_validators import ValidationResult
 from tests.route_guide_protos.route_guide_pb2 import Area
 from tests.route_guide_protos.route_guide_pb2 import Path
@@ -28,7 +29,9 @@ from tests.route_guide_protos.route_guide_pb2 import Route
 
 
 class RouteValidator(AbstractArgumentValidator):
-    def check(self, name: str, value: Any, field_descriptor: FieldDescriptor) -> ValidationResult:
+    def check(
+        self, name: str, value: Any, field_descriptor: FieldDescriptor, validation_context: ValidationContext
+    ) -> ValidationResult:
         invalid_reasons = []
         if len(value.path.points) == 0:
             invalid_reasons.append(f"{name}.path.points should be non-empty")

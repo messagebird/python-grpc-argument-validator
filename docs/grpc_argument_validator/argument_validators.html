@@ -30,22 +30,11 @@
 import re
 import typing
 import uuid
-from dataclasses import dataclass
 
 from google.protobuf.descriptor import FieldDescriptor
 
-
-@dataclass
-class ValidationResult:
-    &#34;&#34;&#34;
-    Contains results for validation check.
-    &#34;&#34;&#34;
-
-    valid: bool
-    &#34;&#34;&#34;Whether the argument was valid.&#34;&#34;&#34;
-
-    invalid_reason: typing.Optional[str] = None
-    &#34;&#34;&#34;Reason for invalidity of the argument. Will be ``None`` if valid.&#34;&#34;&#34;
+from .validation_context import ValidationContext
+from .validation_result import ValidationResult
 
 
 class AbstractArgumentValidator(abc.ABC):
@@ -54,7 +43,9 @@ class AbstractArgumentValidator(abc.ABC):
     &#34;&#34;&#34;
 
     @abc.abstractmethod
-    def check(self, name: str, value: typing.Any, field_descriptor: FieldDescriptor) -&gt; ValidationResult:
+    def check(
+        self, name: str, value: typing.Any, field_descriptor: FieldDescriptor, validation_context: ValidationContext
+    ) -&gt; ValidationResult:
         &#34;&#34;&#34;
         Returns a validation bool of the given value and field_descriptor
 
@@ -62,6 +53,7 @@ class AbstractArgumentValidator(abc.ABC):
                 name (str): Name for the field to be used in invalid reason messages.
                 value (typing.Any): The value to be validated
                 field_descriptor (FieldDescriptor): The protobuf field descriptor of the given value
+                validation_context (ValidationContext): The validation context containing more information about the request that is being validated
 
             Returns:
                 result (ValidationResult): validation bool for the given value
@@ -72,7 +64,9 @@ class AbstractArgumentValidator(abc.ABC):
 class UUIDBytesValidator(AbstractArgumentValidator):
     &#34;&#34;&#34;Class that ensures the provided value is a valid UUID&#34;&#34;&#34;
 
-    def check(self, name: str, value: typing.Any, field_descriptor: FieldDescriptor) -&gt; ValidationResult:
+    def check(
+        self, name: str, value: typing.Any, field_descriptor: FieldDescriptor, validation_context: ValidationContext
+    ) -&gt; ValidationResult:
         try:
             uuid.UUID(bytes=value)
         except (ValueError, TypeError):
@@ -83,7 +77,9 @@ class UUIDBytesValidator(AbstractArgumentValidator):
 class NonDefaultValidator(AbstractArgumentValidator):
     &#34;&#34;&#34;Ensures the provided value is not the default value for this field type&#34;&#34;&#34;
 
-    def check(self, name: str, value: typing.Any, field_descriptor: FieldDescriptor) -&gt; ValidationResult:
+    def check(
+        self, name: str, value: typing.Any, field_descriptor: FieldDescriptor, validation_context: ValidationContext
+    ) -&gt; ValidationResult:
         if value != field_descriptor.default_value:
             return ValidationResult(True)
         return ValidationResult(False, f&#34;{name} must have non-default value&#34;)
@@ -92,7 +88,9 @@ class NonDefaultValidator(AbstractArgumentValidator):
 class NonEmptyValidator(AbstractArgumentValidator):
     &#34;&#34;&#34;Ensures the provided value is non-empty&#34;&#34;&#34;
 
-    def check(self, name: str, value: typing.Any, field_descriptor: FieldDescriptor) -&gt; ValidationResult:
+    def check(
+        self, name: str, value: typing.Any, field_descriptor: FieldDescriptor, validation_context: ValidationContext
+    ) -&gt; ValidationResult:
         if len(value) &gt; 0:
             return ValidationResult(True)
         return ValidationResult(False, f&#34;{name} must be non-empty&#34;)
@@ -109,7 +107,9 @@ class RegexpValidator(AbstractArgumentValidator):
     def __init__(self, pattern: str):
         self._pattern = pattern
 
-    def check(self, name: str, value: typing.Any, field_descriptor: FieldDescriptor) -&gt; ValidationResult:
+    def check(
+        self, name: str, value: typing.Any, field_descriptor: FieldDescriptor, validation_context: ValidationContext
+    ) -&gt; ValidationResult:
         if re.match(self._pattern, value) is not None:
             return ValidationResult(True)
         return ValidationResult(False, f&#34;{name} must match regexp pattern: {self._pattern}&#34;)</code></pre>
@@ -139,7 +139,9 @@ class RegexpValidator(AbstractArgumentValidator):
     &#34;&#34;&#34;
 
     @abc.abstractmethod
-    def check(self, name: str, value: typing.Any, field_descriptor: FieldDescriptor) -&gt; ValidationResult:
+    def check(
+        self, name: str, value: typing.Any, field_descriptor: FieldDescriptor, validation_context: ValidationContext
+    ) -&gt; ValidationResult:
         &#34;&#34;&#34;
         Returns a validation bool of the given value and field_descriptor
 
@@ -147,6 +149,7 @@ class RegexpValidator(AbstractArgumentValidator):
                 name (str): Name for the field to be used in invalid reason messages.
                 value (typing.Any): The value to be validated
                 field_descriptor (FieldDescriptor): The protobuf field descriptor of the given value
+                validation_context (ValidationContext): The validation context containing more information about the request that is being validated
 
             Returns:
                 result (ValidationResult): validation bool for the given value
@@ -167,7 +170,7 @@ class RegexpValidator(AbstractArgumentValidator):
 <h3>Methods</h3>
 <dl>
 <dt id="grpc_argument_validator.argument_validators.AbstractArgumentValidator.check"><code class="name flex">
-<span>def <span class="ident">check</span></span>(<span>self, name: str, value: Any, field_descriptor: google.protobuf.descriptor.FieldDescriptor) ‑> <a title="grpc_argument_validator.argument_validators.ValidationResult" href="#grpc_argument_validator.argument_validators.ValidationResult">ValidationResult</a></span>
+<span>def <span class="ident">check</span></span>(<span>self, name: str, value: Any, field_descriptor: google.protobuf.descriptor.FieldDescriptor, validation_context: <a title="grpc_argument_validator.validation_context.ValidationContext" href="validation_context.html#grpc_argument_validator.validation_context.ValidationContext">ValidationContext</a>) ‑> <a title="grpc_argument_validator.validation_result.ValidationResult" href="validation_result.html#grpc_argument_validator.validation_result.ValidationResult">ValidationResult</a></span>
 </code></dt>
 <dd>
 <div class="desc"><p>Returns a validation bool of the given value and field_descriptor</p>
@@ -175,6 +178,7 @@ class RegexpValidator(AbstractArgumentValidator):
     name (str): Name for the field to be used in invalid reason messages.
     value (typing.Any): The value to be validated
     field_descriptor (FieldDescriptor): The protobuf field descriptor of the given value
+    validation_context (ValidationContext): The validation context containing more information about the request that is being validated
 
 Returns:
     result (ValidationResult): validation bool for the given value
@@ -184,7 +188,9 @@ Returns:
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@abc.abstractmethod
-def check(self, name: str, value: typing.Any, field_descriptor: FieldDescriptor) -&gt; ValidationResult:
+def check(
+    self, name: str, value: typing.Any, field_descriptor: FieldDescriptor, validation_context: ValidationContext
+) -&gt; ValidationResult:
     &#34;&#34;&#34;
     Returns a validation bool of the given value and field_descriptor
 
@@ -192,6 +198,7 @@ def check(self, name: str, value: typing.Any, field_descriptor: FieldDescriptor)
             name (str): Name for the field to be used in invalid reason messages.
             value (typing.Any): The value to be validated
             field_descriptor (FieldDescriptor): The protobuf field descriptor of the given value
+            validation_context (ValidationContext): The validation context containing more information about the request that is being validated
 
         Returns:
             result (ValidationResult): validation bool for the given value
@@ -213,7 +220,9 @@ def check(self, name: str, value: typing.Any, field_descriptor: FieldDescriptor)
 <pre><code class="python">class NonDefaultValidator(AbstractArgumentValidator):
     &#34;&#34;&#34;Ensures the provided value is not the default value for this field type&#34;&#34;&#34;
 
-    def check(self, name: str, value: typing.Any, field_descriptor: FieldDescriptor) -&gt; ValidationResult:
+    def check(
+        self, name: str, value: typing.Any, field_descriptor: FieldDescriptor, validation_context: ValidationContext
+    ) -&gt; ValidationResult:
         if value != field_descriptor.default_value:
             return ValidationResult(True)
         return ValidationResult(False, f&#34;{name} must have non-default value&#34;)</code></pre>
@@ -244,7 +253,9 @@ def check(self, name: str, value: typing.Any, field_descriptor: FieldDescriptor)
 <pre><code class="python">class NonEmptyValidator(AbstractArgumentValidator):
     &#34;&#34;&#34;Ensures the provided value is non-empty&#34;&#34;&#34;
 
-    def check(self, name: str, value: typing.Any, field_descriptor: FieldDescriptor) -&gt; ValidationResult:
+    def check(
+        self, name: str, value: typing.Any, field_descriptor: FieldDescriptor, validation_context: ValidationContext
+    ) -&gt; ValidationResult:
         if len(value) &gt; 0:
             return ValidationResult(True)
         return ValidationResult(False, f&#34;{name} must be non-empty&#34;)</code></pre>
@@ -286,7 +297,9 @@ def check(self, name: str, value: typing.Any, field_descriptor: FieldDescriptor)
     def __init__(self, pattern: str):
         self._pattern = pattern
 
-    def check(self, name: str, value: typing.Any, field_descriptor: FieldDescriptor) -&gt; ValidationResult:
+    def check(
+        self, name: str, value: typing.Any, field_descriptor: FieldDescriptor, validation_context: ValidationContext
+    ) -&gt; ValidationResult:
         if re.match(self._pattern, value) is not None:
             return ValidationResult(True)
         return ValidationResult(False, f&#34;{name} must match regexp pattern: {self._pattern}&#34;)</code></pre>
@@ -317,7 +330,9 @@ def check(self, name: str, value: typing.Any, field_descriptor: FieldDescriptor)
 <pre><code class="python">class UUIDBytesValidator(AbstractArgumentValidator):
     &#34;&#34;&#34;Class that ensures the provided value is a valid UUID&#34;&#34;&#34;
 
-    def check(self, name: str, value: typing.Any, field_descriptor: FieldDescriptor) -&gt; ValidationResult:
+    def check(
+        self, name: str, value: typing.Any, field_descriptor: FieldDescriptor, validation_context: ValidationContext
+    ) -&gt; ValidationResult:
         try:
             uuid.UUID(bytes=value)
         except (ValueError, TypeError):
@@ -337,39 +352,6 @@ def check(self, name: str, value: typing.Any, field_descriptor: FieldDescriptor)
 </ul>
 </li>
 </ul>
-</dd>
-<dt id="grpc_argument_validator.argument_validators.ValidationResult"><code class="flex name class">
-<span>class <span class="ident">ValidationResult</span></span>
-<span>(</span><span>valid: bool, invalid_reason: Union[str, NoneType] = None)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Contains results for validation check.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">class ValidationResult:
-    &#34;&#34;&#34;
-    Contains results for validation check.
-    &#34;&#34;&#34;
-
-    valid: bool
-    &#34;&#34;&#34;Whether the argument was valid.&#34;&#34;&#34;
-
-    invalid_reason: typing.Optional[str] = None
-    &#34;&#34;&#34;Reason for invalidity of the argument. Will be ``None`` if valid.&#34;&#34;&#34;</code></pre>
-</details>
-<h3>Class variables</h3>
-<dl>
-<dt id="grpc_argument_validator.argument_validators.ValidationResult.invalid_reason"><code class="name">var <span class="ident">invalid_reason</span> : Union[str, NoneType]</code></dt>
-<dd>
-<div class="desc"><p>Reason for invalidity of the argument. Will be <code>None</code> if valid.</p></div>
-</dd>
-<dt id="grpc_argument_validator.argument_validators.ValidationResult.valid"><code class="name">var <span class="ident">valid</span> : bool</code></dt>
-<dd>
-<div class="desc"><p>Whether the argument was valid.</p></div>
-</dd>
-</dl>
 </dd>
 </dl>
 </section>
@@ -404,13 +386,6 @@ def check(self, name: str, value: typing.Any, field_descriptor: FieldDescriptor)
 </li>
 <li>
 <h4><code><a title="grpc_argument_validator.argument_validators.UUIDBytesValidator" href="#grpc_argument_validator.argument_validators.UUIDBytesValidator">UUIDBytesValidator</a></code></h4>
-</li>
-<li>
-<h4><code><a title="grpc_argument_validator.argument_validators.ValidationResult" href="#grpc_argument_validator.argument_validators.ValidationResult">ValidationResult</a></code></h4>
-<ul class="">
-<li><code><a title="grpc_argument_validator.argument_validators.ValidationResult.invalid_reason" href="#grpc_argument_validator.argument_validators.ValidationResult.invalid_reason">invalid_reason</a></code></li>
-<li><code><a title="grpc_argument_validator.argument_validators.ValidationResult.valid" href="#grpc_argument_validator.argument_validators.ValidationResult.valid">valid</a></code></li>
-</ul>
 </li>
 </ul>
 </li>

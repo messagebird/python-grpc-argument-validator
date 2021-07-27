@@ -18,18 +18,22 @@ Poetry is required to locally run the tests for this library
 ### Installation
 1. Clone the repo
    ```sh
-   git clone https://github.com/messagebird/grpc-argument-validator.git
+   git clone https://github.com/messagebird/python-grpc-argument-validator.git
    ```
-3. Install packages
+2. Install packages
    ```sh
    poetry install
    ```
-4. Run the tests
+3. Run the tests
    ```sh
    cd src/tests
    poetry run python -m unittest
    ```
 
+### Installation via pip
+```sh
+pip install grpc-argument-validator
+```
 
 
 <!-- USAGE EXAMPLES -->
@@ -37,11 +41,11 @@ Poetry is required to locally run the tests for this library
 ```python
 from google.protobuf.descriptor import FieldDescriptor
 from grpc_argument_validator import validate_args
-from grpc_argument_validator import AbstractArgumentValidator, ValidationResult
+from grpc_argument_validator import AbstractArgumentValidator, ValidationResult, ValidationContext
 
 class PathValidator(AbstractArgumentValidator):
 
-    def check(self, name: str, value: Path, field_descriptor: FieldDescriptor) -> ValidationResult:
+    def check(self, name: str, value: Path, field_descriptor: FieldDescriptor, validation_context: ValidationContext) -> ValidationResult:
         if len(value.points) > 5:
             return ValidationResult(valid=True)
         return ValidationResult(False, f"path for '{name}' should be at least five points long")

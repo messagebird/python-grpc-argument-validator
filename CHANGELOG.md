@@ -13,6 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [comment]: <> (### Removed)
 
+## [0.2.0] - 2021-07-27
+
+### Added
+
+- Adds support for streaming requests
+- Added ValidationContext that gives more information about the request in which validation is happening
+
 ## [0.1.0] - 2021-05-21
 
 ### Added
@@ -24,3 +31,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [unreleased]: https://github.com/messagebird/python-grpc-argument-validator/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/messagebird/python-grpc-argument-validator/releases/tag/v0.1.0
+[0.2.0]: https://github.com/messagebird/python-grpc-argument-validator/releases/tag/v0.2.0

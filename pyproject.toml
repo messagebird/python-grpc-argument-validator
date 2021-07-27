@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "grpc-argument-validator"
-version = "0.1.0"
+version = "0.2.0"
 description = "gRPC argument validator utility."
 homepage = "https://github.com/messagebird/python-grpc-argument-validator"
 repository = "https://github.com/messagebird/python-grpc-argument-validator"

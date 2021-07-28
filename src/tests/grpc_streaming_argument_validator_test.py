@@ -19,6 +19,7 @@ from grpc_argument_validator import RegexpValidator
 from grpc_argument_validator import validate_args
 from grpc_argument_validator import ValidationContext
 from grpc_argument_validator import ValidationResult
+from tests import StatusMatcher
 from tests.route_guide_protos.route_guide_pb2 import Area
 from tests.route_guide_protos.route_guide_pb2 import Path
 from tests.route_guide_protos.route_guide_pb2 import Point
@@ -188,12 +189,14 @@ class TestStreamingValidators(unittest.TestCase):
                     assert str(e) == test_case.decorator_error_message
                 else:
                     context = MagicMock()
-                    context.abort.side_effect = Exception("invalid arg")
+                    context.abort_with_status.side_effect = Exception("invalid arg")
 
                     c = C()
 
                     if test_case.error:
                         self.assertRaisesRegex(Exception, "invalid arg", lambda: c.fn(test_case.proto_stream, context))
-                        context.abort.assert_called_once_with(grpc.StatusCode.INVALID_ARGUMENT, test_case.error_message)
+                        context.abort_with_status.assert_called_once_with(
+                            StatusMatcher(grpc.StatusCode.INVALID_ARGUMENT, test_case.error_message)
+                        )
                     else:
                         c.fn(test_case.proto_stream, context)

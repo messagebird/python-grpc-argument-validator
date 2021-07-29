@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [comment]: <> (### Removed)
 
+## [0.2.1] - 2021-07-29
+
+### Added
+
+- Adds support for rich gRPC error models
+
 ## [0.2.0] - 2021-07-27
 
 ### Added

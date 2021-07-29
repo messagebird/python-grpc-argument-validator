@@ -193,13 +193,19 @@ class TestStreamingValidators(unittest.TestCase):
                 else:
                     context = MagicMock()
                     context.abort_with_status.side_effect = Exception("invalid arg")
+                    context.abort.side_effect = Exception("invalid arg")
 
                     c = C()
 
                     if test_case.error:
+                        ArgumentValidatorConfig.set_rich_grpc_errors(enabled=True)
                         self.assertRaisesRegex(Exception, "invalid arg", lambda: c.fn(test_case.proto_stream, context))
                         context.abort_with_status.assert_called_once_with(
                             StatusMatcher(grpc.StatusCode.INVALID_ARGUMENT, test_case.error_message)
                         )
+
+                        ArgumentValidatorConfig.set_rich_grpc_errors(enabled=False)
+                        self.assertRaisesRegex(Exception, "invalid arg", lambda: c.fn(test_case.proto_stream, context))
+                        context.abort.assert_called_once_with(grpc.StatusCode.INVALID_ARGUMENT, test_case.error_message)
                     else:
                         c.fn(test_case.proto_stream, context)

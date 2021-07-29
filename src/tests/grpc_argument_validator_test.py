@@ -14,10 +14,12 @@ from google.protobuf.message import Message
 from google.protobuf.wrappers_pb2 import BytesValue
 from google.protobuf.wrappers_pb2 import StringValue
 from grpc_argument_validator import AbstractArgumentValidator
+from grpc_argument_validator import ArgumentValidatorConfig
 from grpc_argument_validator import RegexpValidator
 from grpc_argument_validator import validate_args
 from grpc_argument_validator.argument_validators import ValidationContext
 from grpc_argument_validator.argument_validators import ValidationResult
+from tests import StatusMatcher
 from tests.route_guide_protos.route_guide_pb2 import Area
 from tests.route_guide_protos.route_guide_pb2 import Path
 from tests.route_guide_protos.route_guide_pb2 import PLANET_EARTH
@@ -366,7 +368,6 @@ class TestValidators(unittest.TestCase):
             ),
         ]:
             with self.subTest(test_case.description):
-
                 try:
 
                     class C:
@@ -387,11 +388,19 @@ class TestValidators(unittest.TestCase):
                     assert str(e) == test_case.decorator_error_message
                 else:
                     context = MagicMock()
+                    context.abort_with_status.side_effect = Exception("invalid arg")
                     context.abort.side_effect = Exception("invalid arg")
 
                     c = C()
 
                     if test_case.error:
+                        ArgumentValidatorConfig.set_rich_grpc_errors(enabled=True)
+                        self.assertRaisesRegex(Exception, "invalid arg", lambda: c.fn(test_case.proto, context))
+                        context.abort_with_status.assert_called_once_with(
+                            StatusMatcher(grpc.StatusCode.INVALID_ARGUMENT, test_case.error_message)
+                        )
+
+                        ArgumentValidatorConfig.set_rich_grpc_errors(enabled=False)
                         self.assertRaisesRegex(Exception, "invalid arg", lambda: c.fn(test_case.proto, context))
                         context.abort.assert_called_once_with(grpc.StatusCode.INVALID_ARGUMENT, test_case.error_message)
                     else:

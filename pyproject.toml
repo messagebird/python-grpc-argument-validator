@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "grpc-argument-validator"
-version = "0.2.0"
+version = "0.2.1"
 description = "gRPC argument validator utility."
 homepage = "https://github.com/messagebird/python-grpc-argument-validator"
 repository = "https://github.com/messagebird/python-grpc-argument-validator"
@@ -19,6 +19,7 @@ packages = [
 python = "^3.7"
 grpcio = "*"
 protobuf = "*"
+grpcio-status = "^1.39.0"
 
 [tool.poetry.dev-dependencies]
 grpcio-tools = "*"

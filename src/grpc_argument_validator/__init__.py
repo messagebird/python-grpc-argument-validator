@@ -23,6 +23,7 @@ class RouteService(RouteCheckerServicer):
         return BoolValue(value=True)
 ```
 """
+from .argument_validator_config import ArgumentValidatorConfig
 from .argument_validators import AbstractArgumentValidator
 from .argument_validators import RegexpValidator
 from .argument_validators import ValidationContext

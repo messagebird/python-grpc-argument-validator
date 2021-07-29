@@ -25,6 +25,28 @@ from grpc_argument_validator.validation_context import ValidationContext
 from grpc_status import rpc_status
 
 
+class ArugmentValidatorConfig:
+    """
+    Global configuration for the argument validator decorator
+    """
+
+    _use_rich_grpc_errors = False
+
+    @classmethod
+    def set_rich_grpc_errors(cls, enabled: bool = True):
+        """
+        Set the option to use rich grpc errors
+        """
+        cls._use_rich_grpc_errors = enabled
+
+    @classmethod
+    def use_rich_grpc_errors(cls) -> bool:
+        """
+        Returns whether or not the option is set to use rich grpc errors
+        """
+        return cls._use_rich_grpc_errors
+
+
 @dataclass
 class _Error:
     field_name: str
@@ -149,8 +171,11 @@ def validate_args(
                     )
                 )
             if len(errors) > 0:
-                rich_status = _create_rich_validation_error(errors)
-                context.abort_with_status(rpc_status.to_status(rich_status))
+                if ArugmentValidatorConfig.use_rich_grpc_errors():
+                    rich_status = _create_rich_validation_error(errors)
+                    context.abort_with_status(rpc_status.to_status(rich_status))
+                else:
+                    context.abort(grpc.StatusCode.INVALID_ARGUMENT, ", ".join([e.reason for e in errors])[:1000])
 
         def validate_streaming(requests: Iterable[Message], context: grpc.ServicerContext):
             for i, req in enumerate(requests):

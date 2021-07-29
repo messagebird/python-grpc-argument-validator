@@ -14,6 +14,7 @@ from google.protobuf.message import Message
 from google.protobuf.wrappers_pb2 import BytesValue
 from google.protobuf.wrappers_pb2 import StringValue
 from grpc_argument_validator import AbstractArgumentValidator
+from grpc_argument_validator import ArugmentValidatorConfig
 from grpc_argument_validator import RegexpValidator
 from grpc_argument_validator import validate_args
 from grpc_argument_validator.argument_validators import ValidationContext
@@ -58,6 +59,8 @@ class TestValidators(unittest.TestCase):
             decorator_error_message: Optional[str] = None
             validators: Optional[Dict[str, AbstractArgumentValidator]] = None
             optional_validators: Optional[Dict[str, AbstractArgumentValidator]] = None
+
+        ArugmentValidatorConfig.set_rich_grpc_errors(enabled=True)
 
         for test_case in [
             TestCase(
@@ -367,7 +370,6 @@ class TestValidators(unittest.TestCase):
             ),
         ]:
             with self.subTest(test_case.description):
-
                 try:
 
                     class C:

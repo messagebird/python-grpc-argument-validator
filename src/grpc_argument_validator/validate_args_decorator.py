@@ -17,34 +17,13 @@ from google.rpc import code_pb2
 from google.rpc import error_details_pb2
 from google.rpc import status_pb2
 from grpc_argument_validator import AbstractArgumentValidator
+from grpc_argument_validator import ArgumentValidatorConfig
 from grpc_argument_validator.argument_validators import NonDefaultValidator
 from grpc_argument_validator.argument_validators import NonEmptyValidator
 from grpc_argument_validator.argument_validators import UUIDBytesValidator
 from grpc_argument_validator.fields import validate_field_names
 from grpc_argument_validator.validation_context import ValidationContext
 from grpc_status import rpc_status
-
-
-class ArugmentValidatorConfig:
-    """
-    Global configuration for the argument validator decorator
-    """
-
-    _use_rich_grpc_errors = False
-
-    @classmethod
-    def set_rich_grpc_errors(cls, enabled: bool = True):
-        """
-        Set the option to use rich grpc errors
-        """
-        cls._use_rich_grpc_errors = enabled
-
-    @classmethod
-    def use_rich_grpc_errors(cls) -> bool:
-        """
-        Returns whether or not the option is set to use rich grpc errors
-        """
-        return cls._use_rich_grpc_errors
 
 
 @dataclass
@@ -171,7 +150,7 @@ def validate_args(
                     )
                 )
             if len(errors) > 0:
-                if ArugmentValidatorConfig.use_rich_grpc_errors():
+                if ArgumentValidatorConfig.use_rich_grpc_errors():
                     rich_status = _create_rich_validation_error(errors)
                     context.abort_with_status(rpc_status.to_status(rich_status))
                 else:

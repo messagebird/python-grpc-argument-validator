@@ -15,7 +15,7 @@ from google.protobuf.message import Message
 from google.protobuf.wrappers_pb2 import BytesValue
 from google.protobuf.wrappers_pb2 import StringValue
 from grpc_argument_validator import AbstractArgumentValidator
-from grpc_argument_validator import ArugmentValidatorConfig
+from grpc_argument_validator import ArgumentValidatorConfig
 from grpc_argument_validator import RegexpValidator
 from grpc_argument_validator import validate_args
 from grpc_argument_validator import ValidationContext
@@ -66,7 +66,7 @@ class TestStreamingValidators(unittest.TestCase):
             validators: Optional[Dict[str, AbstractArgumentValidator]] = None
             optional_validators: Optional[Dict[str, AbstractArgumentValidator]] = None
 
-        ArugmentValidatorConfig.set_rich_grpc_errors(enabled=True)
+        ArgumentValidatorConfig.set_rich_grpc_errors(enabled=True)
 
         for test_case in [
             TestCase(description="Test no stream", proto_stream=[], has=[]),

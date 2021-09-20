@@ -366,6 +366,12 @@ class TestValidators(unittest.TestCase):
                 f"may be prepended with '.' or appended with '[]'. Alternatively, '.' should be used for "
                 f"performing validations on the 'root' proto.",
             ),
+            TestCase(
+                description="Empty set of validators",
+                proto=Route(),
+                has=[],
+                decorator_error_message="Should provide at least one field to validate",
+            ),
         ]:
             with self.subTest(test_case.description):
                 try:
@@ -387,6 +393,7 @@ class TestValidators(unittest.TestCase):
                 except ValueError as e:
                     assert str(e) == test_case.decorator_error_message
                 else:
+                    assert test_case.decorator_error_message is None
                     context = MagicMock()
                     context.abort_with_status.side_effect = Exception("invalid arg")
                     context.abort.side_effect = Exception("invalid arg")

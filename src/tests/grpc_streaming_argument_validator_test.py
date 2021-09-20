@@ -69,7 +69,7 @@ class TestStreamingValidators(unittest.TestCase):
         ArgumentValidatorConfig.set_rich_grpc_errors(enabled=True)
 
         for test_case in [
-            TestCase(description="Test no stream", proto_stream=[], has=[]),
+            TestCase(description="Test no stream", proto_stream=[], has=["name"]),
             TestCase(
                 description="Test field available in every part of streaming request",
                 has=["name"],

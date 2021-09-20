@@ -1,3 +1,5 @@
+[![codecov](https://codecov.io/gh/messagebird/python-grpc-argument-validator/branch/master/graph/badge.svg)](https://codecov.io/gh/messagebird/python-grpc-argument-validator)
+
 # gRPC argument validator
 gRPC argument validator is a library that provides decorators to automatically validate arguments in requests to rpc methods.
 

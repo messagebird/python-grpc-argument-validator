@@ -1,4 +1,4 @@
-# .github/workflows/test-pypi.yml
+# .github/workflows/tests.yml
 name: Tests
 on:
   push:

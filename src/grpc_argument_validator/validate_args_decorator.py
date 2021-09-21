@@ -1,7 +1,7 @@
 import functools
 import itertools
-import re
 from dataclasses import dataclass
+from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import Iterable
@@ -30,6 +30,10 @@ from grpc_status import rpc_status
 class _FieldViolation:
     field_name: str
     reason: str
+
+
+def _none_or_empty(x: Optional[List[Any]]):
+    return x is None or len(x) == 0
 
 
 def validate_args(
@@ -78,7 +82,7 @@ def validate_args(
         Returns:
             decorating_function (func): the decorating function wrapping the gRPC method function
     """
-    if all(arg is None for arg in locals().values()):
+    if all(_none_or_empty(arg) for arg in locals().values()):
         raise ValueError("Should provide at least one field to validate")
     has_value = has or []
 

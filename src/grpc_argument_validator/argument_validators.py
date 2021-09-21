@@ -30,7 +30,7 @@ class AbstractArgumentValidator(abc.ABC):
             Returns:
                 result (ValidationResult): validation bool for the given value
         """
-        pass
+        pass  # pragma: no cover
 
 
 class UUIDBytesValidator(AbstractArgumentValidator):

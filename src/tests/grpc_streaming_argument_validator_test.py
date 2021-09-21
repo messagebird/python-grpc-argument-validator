@@ -69,7 +69,7 @@ class TestStreamingValidators(unittest.TestCase):
         ArgumentValidatorConfig.set_rich_grpc_errors(enabled=True)
 
         for test_case in [
-            TestCase(description="Test no stream", proto_stream=[], has=[]),
+            TestCase(description="Test no stream", proto_stream=[], has=["name"]),
             TestCase(
                 description="Test field available in every part of streaming request",
                 has=["name"],
@@ -169,6 +169,12 @@ class TestStreamingValidators(unittest.TestCase):
                 error=True,
                 error_message="second path should have 3 points",
             ),
+            TestCase(
+                description="Empty set of validators",
+                proto_stream=[Path(points=[Point(), Point(), Point()]), Path(points=[Point(), Point()]),],
+                has=[],
+                decorator_error_message="Should provide at least one field to validate",
+            ),
         ]:
             with self.subTest(test_case.description):
                 try:
@@ -188,9 +194,10 @@ class TestStreamingValidators(unittest.TestCase):
                             for _ in stream:
                                 pass
 
-                except KeyError as e:
+                except (KeyError, ValueError) as e:
                     assert str(e) == test_case.decorator_error_message
                 else:
+                    assert test_case.decorator_error_message is None
                     context = MagicMock()
                     context.abort_with_status.side_effect = Exception("invalid arg")
                     context.abort.side_effect = Exception("invalid arg")

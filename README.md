@@ -2,6 +2,8 @@
 [![PyPI](https://img.shields.io/pypi/v/grpc-argument-validator.svg?color=blue)](https://pypi.org/project/python-grpc-argument-validator/)
 [![License](https://img.shields.io/github/license/messagebird/python-grpc-argument-validator)](https://opensource.org/licenses/BSD-3-Clause)
 [![Docs](https://img.shields.io/static/v1?label=Docs&message=Github%20Pages&color=blue)](https://messagebird.github.io/python-grpc-argument-validator/grpc_argument_validator/)
+[![tests](https://github.com/messagebird/python-grpc-argument-validator/workflows/Tests/badge.svg)](https://github.com/messagebird/python-grpc-argument-validator/actions?workflow=tests)
+
 
 # gRPC argument validator
 gRPC argument validator is a library that provides decorators to automatically validate arguments in requests to rpc methods.

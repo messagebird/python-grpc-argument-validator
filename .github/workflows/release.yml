@@ -1,5 +1,5 @@
-# .github/workflows/test-pypi.yml
-name: Lint, test and optional release
+# .github/workflows/release.yml
+name: Release
 on:
   push:
     branches:
@@ -21,29 +21,6 @@ jobs:
 
   test:
     name: Tests
-    strategy:
-      matrix:
-        python-version: [ 3.7, 3.8, 3.9 ]
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python-version }}
-
-    - name: Install Poetry
-      run: pip install poetry==1.1.9
-
-    - name: Install dependencies
-      run: poetry install
-
-    - name: Run pytest
-      run: poetry run python -m unittest discover -s src/tests -p '*_test.py'
-
-  coverage:
-    name: Coverage
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -60,12 +37,7 @@ jobs:
       run: poetry install
 
     - name: Run pytest
-      run: poetry run coverage run --source ./src/grpc_argument_validator -m unittest discover -s src/tests -p '*_test.py'
-
-    - name: Upload Coverage Report
-      run: |
-        poetry run coverage xml --fail-under=0
-        poetry run codecov
+      run: poetry run python -m unittest discover -s src/tests -p '*_test.py'
 
   publish_test_pypi:
     name: Publish to test.pypi.org

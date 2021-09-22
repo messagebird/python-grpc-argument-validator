@@ -226,7 +226,7 @@ def _recurse_validate(
         ):
             if is_optional:
                 return []
-            return [_FieldViolation(field_name=full_name, reason=f"request must have {full_name}")]
+            return [_FieldViolation(field_name=full_name, reason=f"must have '{full_name}'")]
 
         field_value = getattr(message, field_name)
 

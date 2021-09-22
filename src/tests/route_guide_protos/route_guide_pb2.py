@@ -13,6 +13,7 @@ from google.protobuf.internal import enum_type_wrapper
 _sym_db = _symbol_database.Default()
 
 
+from google.protobuf import empty_pb2 as google_dot_protobuf_dot_empty__pb2
 from google.protobuf import wrappers_pb2 as google_dot_protobuf_dot_wrappers__pb2
 
 
@@ -22,8 +23,8 @@ DESCRIPTOR = _descriptor.FileDescriptor(
     syntax="proto3",
     serialized_options=None,
     create_key=_descriptor._internal_create_key,
-    serialized_pb=b'\n\x11route_guide.proto\x12\nrouteguide\x1a\x1egoogle/protobuf/wrappers.proto"I\n\x05Point\x12\t\n\x01x\x18\x01 \x01(\x05\x12\t\n\x01y\x18\x02 \x01(\x05\x12*\n\x04name\x18\x03 \x01(\x0b\x32\x1c.google.protobuf.StringValue"I\n\tRectangle\x12\x1d\n\x02lo\x18\x01 \x01(\x0b\x32\x11.routeguide.Point\x12\x1d\n\x02hi\x18\x02 \x01(\x0b\x32\x11.routeguide.Point"\x8a\x01\n\x04\x41rea\x12(\n\trectangle\x18\x01 \x01(\x0b\x32\x15.routeguide.Rectangle\x12-\n\x07message\x18\x02 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12)\n\x04uuid\x18\x03 \x01(\x0b\x32\x1b.google.protobuf.BytesValue")\n\x04Path\x12!\n\x06points\x18\x01 \x03(\x0b\x32\x11.routeguide.Point"0\n\x0bPlanetValue\x12!\n\x05value\x18\x01 \x01(\x0e\x32\x12.routeguide.Planet"\x8a\x01\n\x05Route\x12\x1e\n\x04path\x18\x01 \x01(\x0b\x32\x10.routeguide.Path\x12*\n\x04name\x18\x02 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12\'\n\x06planet\x18\x03 \x01(\x0b\x32\x17.routeguide.PlanetValue\x12\x0c\n\x04tags\x18\x04 \x03(\t*?\n\x06Planet\x12\x12\n\x0ePLANET_INVALID\x10\x00\x12\x10\n\x0cPLANET_EARTH\x10\x01\x12\x0f\n\x0bPLANET_MARS\x10\x02\x62\x06proto3',
-    dependencies=[google_dot_protobuf_dot_wrappers__pb2.DESCRIPTOR,],
+    serialized_pb=b'\n\x11route_guide.proto\x12\nrouteguide\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1egoogle/protobuf/wrappers.proto"I\n\x05Point\x12\t\n\x01x\x18\x01 \x01(\x05\x12\t\n\x01y\x18\x02 \x01(\x05\x12*\n\x04name\x18\x03 \x01(\x0b\x32\x1c.google.protobuf.StringValue"I\n\tRectangle\x12\x1d\n\x02lo\x18\x01 \x01(\x0b\x32\x11.routeguide.Point\x12\x1d\n\x02hi\x18\x02 \x01(\x0b\x32\x11.routeguide.Point"\x8a\x01\n\x04\x41rea\x12(\n\trectangle\x18\x01 \x01(\x0b\x32\x15.routeguide.Rectangle\x12-\n\x07message\x18\x02 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12)\n\x04uuid\x18\x03 \x01(\x0b\x32\x1b.google.protobuf.BytesValue")\n\x04Path\x12!\n\x06points\x18\x01 \x03(\x0b\x32\x11.routeguide.Point"0\n\x0bPlanetValue\x12!\n\x05value\x18\x01 \x01(\x0e\x32\x12.routeguide.Planet"\x8a\x01\n\x05Route\x12\x1e\n\x04path\x18\x01 \x01(\x0b\x32\x10.routeguide.Path\x12*\n\x04name\x18\x02 \x01(\x0b\x32\x1c.google.protobuf.StringValue\x12\'\n\x06planet\x18\x03 \x01(\x0b\x32\x17.routeguide.PlanetValue\x12\x0c\n\x04tags\x18\x04 \x03(\t*?\n\x06Planet\x12\x12\n\x0ePLANET_INVALID\x10\x00\x12\x10\n\x0cPLANET_EARTH\x10\x01\x12\x0f\n\x0bPLANET_MARS\x10\x02\x32\x80\x01\n\x0cRouteService\x12\x38\n\x0b\x43reateRoute\x12\x11.routeguide.Route\x1a\x16.google.protobuf.Empty\x12\x36\n\nCreateArea\x12\x10.routeguide.Area\x1a\x16.google.protobuf.Emptyb\x06proto3',
+    dependencies=[google_dot_protobuf_dot_empty__pb2.DESCRIPTOR, google_dot_protobuf_dot_wrappers__pb2.DESCRIPTOR,],
 )
 
 _PLANET = _descriptor.EnumDescriptor(
@@ -60,8 +61,8 @@ _PLANET = _descriptor.EnumDescriptor(
     ],
     containing_type=None,
     serialized_options=None,
-    serialized_start=590,
-    serialized_end=653,
+    serialized_start=619,
+    serialized_end=682,
 )
 _sym_db.RegisterEnumDescriptor(_PLANET)
 
@@ -145,8 +146,8 @@ _POINT = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=65,
-    serialized_end=138,
+    serialized_start=94,
+    serialized_end=167,
 )
 
 
@@ -205,8 +206,8 @@ _RECTANGLE = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=140,
-    serialized_end=213,
+    serialized_start=169,
+    serialized_end=242,
 )
 
 
@@ -284,8 +285,8 @@ _AREA = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=216,
-    serialized_end=354,
+    serialized_start=245,
+    serialized_end=383,
 )
 
 
@@ -325,8 +326,8 @@ _PATH = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=356,
-    serialized_end=397,
+    serialized_start=385,
+    serialized_end=426,
 )
 
 
@@ -366,8 +367,8 @@ _PLANETVALUE = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=399,
-    serialized_end=447,
+    serialized_start=428,
+    serialized_end=476,
 )
 
 
@@ -464,8 +465,8 @@ _ROUTE = _descriptor.Descriptor(
     syntax="proto3",
     extension_ranges=[],
     oneofs=[],
-    serialized_start=450,
-    serialized_end=588,
+    serialized_start=479,
+    serialized_end=617,
 )
 
 _POINT.fields_by_name["name"].message_type = google_dot_protobuf_dot_wrappers__pb2._STRINGVALUE
@@ -554,5 +555,41 @@ Route = _reflection.GeneratedProtocolMessageType(
 )
 _sym_db.RegisterMessage(Route)
 
+
+_ROUTESERVICE = _descriptor.ServiceDescriptor(
+    name="RouteService",
+    full_name="routeguide.RouteService",
+    file=DESCRIPTOR,
+    index=0,
+    serialized_options=None,
+    create_key=_descriptor._internal_create_key,
+    serialized_start=685,
+    serialized_end=813,
+    methods=[
+        _descriptor.MethodDescriptor(
+            name="CreateRoute",
+            full_name="routeguide.RouteService.CreateRoute",
+            index=0,
+            containing_service=None,
+            input_type=_ROUTE,
+            output_type=google_dot_protobuf_dot_empty__pb2._EMPTY,
+            serialized_options=None,
+            create_key=_descriptor._internal_create_key,
+        ),
+        _descriptor.MethodDescriptor(
+            name="CreateArea",
+            full_name="routeguide.RouteService.CreateArea",
+            index=1,
+            containing_service=None,
+            input_type=_AREA,
+            output_type=google_dot_protobuf_dot_empty__pb2._EMPTY,
+            serialized_options=None,
+            create_key=_descriptor._internal_create_key,
+        ),
+    ],
+)
+_sym_db.RegisterServiceDescriptor(_ROUTESERVICE)
+
+DESCRIPTOR.services_by_name["RouteService"] = _ROUTESERVICE
 
 # @@protoc_insertion_point(module_scope)

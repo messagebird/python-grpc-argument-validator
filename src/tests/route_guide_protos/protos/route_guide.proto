@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package routeguide;
 
+import "google/protobuf/empty.proto";
 import "google/protobuf/wrappers.proto";
 
 message Point {
@@ -40,4 +41,9 @@ message Route {
   google.protobuf.StringValue name = 2;
   PlanetValue planet = 3;
   repeated string tags = 4;
+}
+
+service RouteService {
+  rpc CreateRoute(Route) returns (google.protobuf.Empty);
+  rpc CreateArea(Area) returns (google.protobuf.Empty);
 }

@@ -9,7 +9,8 @@ readme = "README.md"
 documentation = "https://messagebird.github.io/python-grpc-argument-validator"
 authors = [
     "Jos van de Wolfshaar <jos@messagebird.com>",
-    "Jorn Engelbart <jorn@messagebird.com>"
+    "Jorn Engelbart <jorn@messagebird.com>",
+    "Luka Stout <luka.stout@messagebird.com>"
 ]
 packages = [
     { include = "grpc_argument_validator", from = "src" }
@@ -19,13 +20,15 @@ packages = [
 python = "^3.7"
 grpcio = "*"
 protobuf = "*"
-grpcio-status = "^1.39.0"
+grpcio-status = "*"
 
 [tool.poetry.dev-dependencies]
 grpcio-tools = "*"
 pdoc3 = "^0.9.2"
 coverage = "*"
 codecov = "*"
+mypy-protobuf = "*"
+types-protobuf = "*"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

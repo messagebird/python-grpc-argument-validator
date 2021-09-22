@@ -42,7 +42,7 @@ class UUIDBytesValidator(AbstractArgumentValidator):
         try:
             uuid.UUID(bytes=value)
         except (ValueError, TypeError):
-            return ValidationResult(False, f"{name} must be a valid UUID")
+            return ValidationResult(False, f"'{name}' must be a valid UUID")
         return ValidationResult(True)
 
 
@@ -54,7 +54,7 @@ class NonDefaultValidator(AbstractArgumentValidator):
     ) -> ValidationResult:
         if value != field_descriptor.default_value:
             return ValidationResult(True)
-        return ValidationResult(False, f"{name} must have non-default value")
+        return ValidationResult(False, f"'{name}' must have non-default value")
 
 
 class NonEmptyValidator(AbstractArgumentValidator):
@@ -65,7 +65,7 @@ class NonEmptyValidator(AbstractArgumentValidator):
     ) -> ValidationResult:
         if len(value) > 0:
             return ValidationResult(True)
-        return ValidationResult(False, f"{name} must be non-empty")
+        return ValidationResult(False, f"'{name}' must be non-empty")
 
 
 class RegexpValidator(AbstractArgumentValidator):
@@ -84,4 +84,4 @@ class RegexpValidator(AbstractArgumentValidator):
     ) -> ValidationResult:
         if re.match(self._pattern, value) is not None:
             return ValidationResult(True)
-        return ValidationResult(False, f"{name} must match regexp pattern: {self._pattern}")
+        return ValidationResult(False, f"'{name}' must match regexp pattern: {self._pattern}")

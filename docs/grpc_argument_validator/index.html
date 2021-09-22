@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.9.2" />
 <title>grpc_argument_validator API documentation</title>
-<meta name="description" content="Provides decorator to validate arguments in protobuf messages …" />
+<meta name="description" content="…" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
 <link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
@@ -22,15 +22,47 @@
 <h1 class="title">Package <code>grpc_argument_validator</code></h1>
 </header>
 <section id="section-intro">
-<p>Provides decorator to validate arguments in protobuf messages.</p>
-<p>Example:</p>
-<pre><code>from google.protobuf.descriptor import FieldDescriptor
+<p><a href="https://codecov.io/gh/messagebird/python-grpc-argument-validator"><img alt="codecov" src="https://codecov.io/gh/messagebird/python-grpc-argument-validator/branch/master/graph/badge.svg"></a>
+<a href="https://pypi.org/project/python-grpc-argument-validator/"><img alt="PyPI" src="https://img.shields.io/pypi/v/grpc-argument-validator.svg?color=blue"></a>
+<a href="https://opensource.org/licenses/BSD-3-Clause"><img alt="License" src="https://img.shields.io/github/license/messagebird/python-grpc-argument-validator"></a>
+<a href="https://messagebird.github.io/python-grpc-argument-validator/grpc_argument_validator/"><img alt="Docs" src="https://img.shields.io/static/v1?label=Docs&amp;message=Github%20Pages&amp;color=blue"></a>
+<a href="https://github.com/messagebird/python-grpc-argument-validator/actions?workflow=tests"><img alt="tests" src="https://github.com/messagebird/python-grpc-argument-validator/workflows/Tests/badge.svg"></a></p>
+<h1 id="grpc-argument-validator">gRPC argument validator</h1>
+<p>gRPC argument validator is a library that provides decorators to automatically validate arguments in requests to rpc methods.</p>
+<!-- GETTING STARTED -->
+<h2 id="getting-started">Getting Started</h2>
+<p>This is an example of how you may give instructions on setting up your project locally.
+To get a local copy up and running follow these simple example steps.</p>
+<h3 id="prerequisites">Prerequisites</h3>
+<p>Poetry is required to locally run the tests for this library
+* poetry
+<code>sh
+pip install --user poetry</code></p>
+<h3 id="installation">Installation</h3>
+<ol>
+<li>Clone the repo
+<code>sh
+git clone &lt;https://github.com/messagebird/python-grpc-argument-validator.git&gt;</code></li>
+<li>Install packages
+<code>sh
+poetry install</code></li>
+<li>Run the tests
+<code>sh
+cd src/tests
+poetry run python -m unittest</code></li>
+</ol>
+<h3 id="installation-via-pip">Installation via pip</h3>
+<pre><code class="language-sh">pip install grpc-argument-validator
+</code></pre>
+<!-- USAGE EXAMPLES -->
+<h2 id="quick-example">Quick Example</h2>
+<pre><code class="language-python">from google.protobuf.descriptor import FieldDescriptor
 from grpc_argument_validator import validate_args
-from grpc_argument_validator import AbstractArgumentValidator, ValidationResult
+from grpc_argument_validator import AbstractArgumentValidator, ValidationResult, ValidationContext
 
 class PathValidator(AbstractArgumentValidator):
 
-    def check(self, name: str, value: Path, field_descriptor: FieldDescriptor) -&gt; ValidationResult:
+    def check(self, name: str, value: Path, field_descriptor: FieldDescriptor, validation_context: ValidationContext) -&gt; ValidationResult:
         if len(value.points) &gt; 5:
             return ValidationResult(valid=True)
         return ValidationResult(False, f&quot;path for '{name}' should be at least five points long&quot;)
@@ -43,34 +75,304 @@ class RouteService(RouteCheckerServicer):
     def Create(self, request: Route, context: grpc.ServicerContext):
         return BoolValue(value=True)
 </code></pre>
+<!-- DOCUMENTATION -->
+<h2 id="documentation">Documentation</h2>
+<p>We host the full API reference on <a href="https://messagebird.github.io/python-grpc-argument-validator/grpc_argument_validator/">GitHub pages</a>.</p>
+<h3 id="argument-field-syntax">Argument field syntax</h3>
+<p>To specify which argument field should be validated, <code>grpc-argument-validator</code> expects strings that match the field names
+as defined in the protobufs. To access nested fields, use a dot (<code>.</code>).</p>
+<p>Consider the following protobuf definition:</p>
+<pre><code class="language-protobuf">syntax = &quot;proto3&quot;;
+
+package routeguide;
+
+import &quot;google/protobuf/empty.proto&quot;;
+import &quot;google/protobuf/wrappers.proto&quot;;
+
+message Point {
+  int32 x = 1;
+  int32 y = 2;
+  google.protobuf.StringValue name = 3;
+}
+
+message Rectangle {
+  Point lo = 1;
+  Point hi = 2;
+}
+
+message Area {
+  Rectangle rectangle = 1;
+  google.protobuf.StringValue message = 2;
+  google.protobuf.BytesValue uuid = 3;
+}
+
+message Path {
+  repeated Point points = 1;
+}
+
+enum Planet {
+  PLANET_INVALID = 0;
+  PLANET_EARTH = 1;
+  PLANET_MARS = 2;
+}
+
+message PlanetValue {
+  Planet value = 1;
+}
+
+message Route {
+  Path path = 1;
+  google.protobuf.StringValue name = 2;
+  PlanetValue planet = 3;
+  repeated string tags = 4;
+}
+
+service RouteService {
+  rpc CreateRoute(Route) returns (google.protobuf.Empty);
+}
+</code></pre>
+<ul>
+<li>If you want to validate the field <code>planet</code> in a <code>Route</code> proto, simply specify <code>"planet"</code> or equivalently <code>".planet"</code>.</li>
+<li>If you want to validate the <code>value</code> field within the <code>name</code> field of a <code>Route</code> proto, use <code>"name.value"</code> or
+equivalently <code>".name.value"</code>.</li>
+<li>If you want to apply a check to each element of a <code>repeated</code> field, append <code>[]</code> to the name of the field.</li>
+<li>If you want to apply a check to the 'root proto' (i.e. the request itself), use <code>"."</code> as the field path.</li>
+</ul>
+<p>To clarify this, let's say that we know that both <code>planet</code> and <code>name.value</code> should have non-default values. We can then
+decorate a method in our gRPC server as follows:</p>
+<pre><code class="language-python">import grpc
+from google.protobuf.empty_pb2 import Empty
+from grpc_argument_validator import validate_args
+from tests.route_guide_protos.route_guide_pb2 import Route
+from tests.route_guide_protos.route_guide_pb2_grpc import RouteServiceServicer
+
+
+class RouteServiceImpl(RouteServiceServicer):
+    @validate_args(non_empty=[&quot;planet&quot;, &quot;name.value&quot;])
+    def Create(self, request: Route, context: grpc.ServicerContext):
+        return Empty()
+</code></pre>
+<p>Calling the service with a default value for either <code>planet</code> or <code>name.value</code> will yield an <code>INVALID_ARGUMENT</code> status code
+with further details on which fields violate the validation.</p>
+<h3 id="validators">Validators</h3>
+<p>There are two kinds of validators you might consider.</p>
+<ul>
+<li>We have predefined some common validators which we will cover shortly</li>
+<li>Another option is to define your own validators</li>
+</ul>
+<p>In the examples below, we have used exactly one validator + field path per <code>validate_args</code> decorator for clarity.
+Fortunately, our API allows you to use multiple validators and fields!</p>
+<h4 id="has-validator">'Has' validator</h4>
+<p>The simplest of all predefined validators is the 'has' validator which simply checks whether a <code>HasField</code> evaluates to
+<code>True</code>. This of course works in combination with nested fields. The underlying</p>
+<p>In the example below, calling the <code>Create</code> endpoint without setting <code>Route.name</code> would result in an <code>INVALID_ARGUMENT</code>
+status.</p>
+<pre><code class="language-python">
+class RouteServiceImpl(RouteServiceServicer):
+    @validate_args(has=[&quot;name&quot;])
+    def CreateRoute(self, request: Route, context: grpc.ServicerContext):
+        return Empty()
+</code></pre>
+<p>Run this on a local machine and make a request with an invalid argument:</p>
+<pre><code class="language-python">with grpc.insecure_channel(&quot;127.0.0.1:50051&quot;) as c:
+    route_client = RouteServiceStub(channel=c)
+    try:
+        route_client.CreateRoute(Route(tags=[&quot;tag&quot;]))
+    except grpc.RpcError as e:
+        if isinstance(e, grpc.Call):
+            print(e.details())
+</code></pre>
+<p>The following will be printed:
+<code>must have 'name'</code></p>
+<h4 id="uuid-validator">UUID validator</h4>
+<p>Another common use-case is the validation of UUIDs. You can enlist the fields that should be UUIDs (represented as
+16 bytes) with the <code>uuids</code> argument:</p>
+<pre><code class="language-python">class RouteServiceImpl(RouteServiceServicer):
+    @validate_args(uuids=[&quot;uuid.value&quot;])
+    def CreateArea(self, request: Area, context: grpc.ServicerContext):
+        return Empty()
+</code></pre>
+<p>The client side might violate the UUID requirement as follows:</p>
+<pre><code class="language-python">with grpc.insecure_channel(&quot;127.0.0.1:50051&quot;) as c:
+    route_client = RouteServiceStub(channel=c)
+    try:
+        route_client.CreateArea(Area(uuid=BytesValue(value=&quot;not a uuid&quot;.encode())))
+    except grpc.RpcError as e:
+        if isinstance(e, grpc.Call):
+            print(e.details())
+</code></pre>
+<p>This will print <code>'uuid.value' must be a valid UUID</code>.</p>
+<h4 id="non-default-validator">Non-default validator</h4>
+<p>For fields that should have a non-default value, such as
+<a href="https://developers.google.com/protocol-buffers/docs/style#enums">enums</a>, we have provided the <code>non_default</code> argument:</p>
+<pre><code class="language-python">class RouteServiceImpl(RouteServiceServicer):
+    @validate_args(non_default=[&quot;planet.value&quot;])
+    def CreateRoute(self, request: Route, context: grpc.ServicerContext):
+        return Empty()
+</code></pre>
+<p>The client side may violate this as follows:</p>
+<pre><code class="language-python">with grpc.insecure_channel(&quot;127.0.0.1:50051&quot;) as c:
+    route_client = RouteServiceStub(channel=c)
+    try:
+        route_client.CreateRoute(Route(planet=PlanetValue()))
+    except grpc.RpcError as e:
+        if isinstance(e, grpc.Call):
+            print(e.details())
+</code></pre>
+<p>Which will print <code>'planet.value' must have non-default value</code>.</p>
+<h4 id="non-empty-validator">Non-empty validator</h4>
+<p>We provide a 'non-'empty validator which can be used to ensure that a <code>repeated</code> field has more than zero elements.</p>
+<pre><code class="language-python">class RouteServiceImpl(RouteServiceServicer):
+    @validate_args(non_empty=[&quot;tags&quot;])
+    def CreateRoute(self, request: Route, context: grpc.ServicerContext):
+        return Empty()
+</code></pre>
+<p>Which can be violated as follows:</p>
+<pre><code class="language-python">with grpc.insecure_channel(&quot;127.0.0.1:50051&quot;) as c:
+    route_client = RouteServiceStub(channel=c)
+    try:
+        route_client.CreateRoute(Route(tags=[]))
+    except grpc.RpcError as e:
+        if isinstance(e, grpc.Call):
+            print(e.details())
+</code></pre>
+<p>Which will print <code>'tags' must be non-empty</code>.</p>
+<h4 id="regexp-validator">Regexp validator</h4>
+<p>Finally, we have the regexp validator that can be used to check whether a string field matches a regular expression.</p>
+<pre><code class="language-python">class RouteServiceImpl(RouteServiceServicer):
+    @validate_args(validators={&quot;message.value&quot;: RegexpValidator(pattern=r&quot;\d+&quot;)})
+    def CreateArea(self, request: Area, context: grpc.ServicerContext):
+        return Empty()
+</code></pre>
+<pre><code class="language-python">with grpc.insecure_channel(&quot;127.0.0.1:50051&quot;) as c:
+    route_client = RouteServiceStub(channel=c)
+    try:
+        route_client.CreateArea(Area(message=StringValue(value=&quot;hello world&quot;)))
+    except grpc.RpcError as e:
+        if isinstance(e, grpc.Call):
+            print(e.details())
+</code></pre>
+<p>Which will print <code>'message.value' must match regexp pattern: \d+</code>.</p>
+<h4 id="custom-validators">Custom validators</h4>
+<p>You can also write custom validators that to flexibily handle your use-case. You need to derive a class from
+<code>AbstractArgumentValidator</code> and implement its <code>check</code> method. The example below shows how to implement a simple
+validator for checking that a path should have 5 points. You can provide such custom validators through a <code>dict</code> that
+maps a field path to a validator:</p>
+<pre><code class="language-python">from grpc_argument_validator import AbstractArgumentValidator
+from grpc_argument_validator import ValidationContext
+from grpc_argument_validator import ValidationResult
+from google.protobuf.descriptor import FieldDescriptor
+
+from examples.route_guide_pb2 import Path
+
+class PathValidator(AbstractArgumentValidator):
+    def check(
+        self, name: str, value: Path, field_descriptor: FieldDescriptor, validation_context: ValidationContext
+    ) -&gt; ValidationResult:
+        if len(value.points) &gt; 5:
+            return ValidationResult(valid=True)
+        return ValidationResult(False, f&quot;path for '{name}' should be at least five points long&quot;)
+
+
+class RouteServiceImpl(RouteServiceServicer):
+
+    @validate_args(validators={&quot;path&quot;: PathValidator()})
+    def CreateRoute(self, request: Route, context: grpc.ServicerContext):
+        return Empty()
+</code></pre>
+<h3 id="optional-vs-required-validators">Optional vs. required validators</h3>
+<p>For each of the built-in validators, there are two arguments that <code>validate_arg</code> takes in. One of those is prepended
+with <code>optional_</code>. This means that apart from <code>uuid</code>, <code>non_default</code> and <code>non_empty</code> we also have <code>optional_uuid</code>,
+<code>optional_non_default</code> and <code>optional_non_empty</code>. The behavior is slightly different: for any of the <code>optional_*</code>
+validators, it is OK if the field is not contained by the incoming request. Sometimes fields are simply optional, and
+you only want to validate them <em>if</em> they are present.</p>
+<p>Since it is also common that fields are <em>not optional</em>, we also provide the required validators (without <code>optional_*</code>)
+for which <a href="https://googleapis.dev/python/protobuf/latest/google/protobuf/message.html#google.protobuf.message.Message.HasField"><code>HasField</code></a>
+must evaluate to <code>True</code> for that field and all preceding fields in the protos hierarchy.</p>
+<p>The custom validator counterparts are <code>validators</code> and <code>optional_validators</code>. Each takes a <code>dict</code> with a mapping of
+field paths to validators.</p>
+<h3 id="streaming-requests">Streaming requests</h3>
+<p>You can also use the validators for streaming requests. Since streaming requests might not all look the same in a
+single stream (e.g. the first request might have metadata describing the remainder of the stream), we provide a
+streaming request index in a <code>ValidationContext</code> that is passed to an <code>AbstractArgumentValidator</code>.</p>
+<p>Here's an example of how that could be used:</p>
+<pre><code class="language-python">class StreamingPathValidator(AbstractArgumentValidator):
+    def __init__(self, first_number_of_points: int, second_number_of_points: int):
+        self._first_number_of_points = first_number_of_points
+        self._second_number_of_points = second_number_of_points
+
+    def check(
+        self, name: str, value: Any, field_descriptor: FieldDescriptor, validation_context: ValidationContext
+    ) -&gt; ValidationResult:
+        if not validation_context.is_streaming:
+            return ValidationResult(False, &quot;request must be a streaming request&quot;)
+
+        if validation_context.streaming_message_index == 0:
+            if len(value.points) != self._first_number_of_points:
+                return ValidationResult(False, f&quot;first path should have {self._first_number_of_points} points&quot;)
+
+        if validation_context.streaming_message_index == 1:
+            if len(value.points) != self._second_number_of_points:
+                return ValidationResult(False, f&quot;second path should have {self._second_number_of_points} points&quot;)
+
+        return ValidationResult(True)
+</code></pre>
+<h3 id="enabling-rich-error-details">Enabling rich error details</h3>
+<p>To enable <a href="https://cloud.google.com/apis/design/errors#error_model">richer error responses</a> where each violation is
+contained in a
+<a href="https://github.com/googleapis/googleapis/blob/master/google/rpc/error_details.proto"><code>BadRequest</code> proto</a>, you can use</p>
+<pre><code class="language-python">from grpc_argument_validator import ArgumentValidatorConfig
+
+ArgumentValidatorConfig.set_rich_grpc_errors(enabled=True)
+</code></pre>
+<p>Now, your client-side can parse the error details as follows:</p>
+<pre><code class="language-python">def extract_error_details(err):
+    status_proto = status_pb2.Status()
+
+    for metadatum in err.trailing_metadata():
+        if isinstance(metadatum, _Metadatum):
+            if metadatum.key == &quot;grpc-status-details-bin&quot;:
+                status_proto.MergeFromString(metadatum.value)
+
+    unpacked = [_unpack_error_detail(det) for det in status_proto.details]
+    return unpacked
+
+def _unpack_error_detail(grpc_detail):
+    val = error_details_pb2.BadRequest()
+    grpc_detail.Unpack(val)
+    return val
+
+with grpc.insecure_channel(&quot;127.0.0.1:50051&quot;) as c:
+    route_client = RouteServiceStub(channel=c)
+    try:
+        route_client.CreateArea(Area(message=StringValue(value=&quot;hello world&quot;)))
+    except grpc.RpcError as e:
+        error_details = extract_error_details(e)
+        print(error_details)
+</code></pre>
+<!-- CONTRIBUTING -->
+<h2 id="contributing">Contributing</h2>
+<p>Contributions are what make the open source community such an amazing place to be learn, inspire, and create. Any contributions you make are <strong>greatly appreciated</strong>.</p>
+<ol>
+<li>Fork the Project</li>
+<li>Create your Feature Branch (<code>git checkout -b feature/AmazingFeature</code>)</li>
+<li>Commit your Changes (<code>git commit -m 'Add some AmazingFeature'</code>)</li>
+<li>Push to the Branch (<code>git push origin feature/AmazingFeature</code>)</li>
+<li>Open a Pull Request</li>
+</ol>
+<h3 id="generating-html-documentation">Generating HTML Documentation</h3>
+<p>Generate the docs by running:</p>
+<pre><code class="language-sh">pdoc --html -o docs src/grpc_argument_validator
+</code></pre>
+<!-- LICENSE -->
+<h2 id="license">License</h2>
+<p>Distributed under The BSD 3-Clause License. Copyright (c) 2021, MessageBird</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">&#34;&#34;&#34;
-Provides decorator to validate arguments in protobuf messages.
-
-Example:
-```
-from google.protobuf.descriptor import FieldDescriptor
-from grpc_argument_validator import validate_args
-from grpc_argument_validator import AbstractArgumentValidator, ValidationResult
-
-class PathValidator(AbstractArgumentValidator):
-
-    def check(self, name: str, value: Path, field_descriptor: FieldDescriptor) -&gt; ValidationResult:
-        if len(value.points) &gt; 5:
-            return ValidationResult(valid=True)
-        return ValidationResult(False, f&#34;path for &#39;{name}&#39; should be at least five points long&#34;)
-
-class RouteService(RouteCheckerServicer):
-    @validate_args(
-        non_empty=[&#34;tags&#34;, &#34;tags[]&#34;, &#34;path.points&#34;],
-        validators={&#34;path&#34;: PathValidator()},
-    )
-    def Create(self, request: Route, context: grpc.ServicerContext):
-        return BoolValue(value=True)
-```
+.. include:: ../../README.md
 &#34;&#34;&#34;
 from .argument_validator_config import ArgumentValidatorConfig
 from .argument_validators import AbstractArgumentValidator
@@ -119,7 +421,39 @@ from .validate_args_decorator import validate_args</code></pre>
 <nav id="sidebar">
 <h1>Index</h1>
 <div class="toc">
-<ul></ul>
+<ul>
+<li><a href="#grpc-argument-validator">gRPC argument validator</a><ul>
+<li><a href="#getting-started">Getting Started</a><ul>
+<li><a href="#prerequisites">Prerequisites</a></li>
+<li><a href="#installation">Installation</a></li>
+<li><a href="#installation-via-pip">Installation via pip</a></li>
+</ul>
+</li>
+<li><a href="#quick-example">Quick Example</a></li>
+<li><a href="#documentation">Documentation</a><ul>
+<li><a href="#argument-field-syntax">Argument field syntax</a></li>
+<li><a href="#validators">Validators</a><ul>
+<li><a href="#has-validator">'Has' validator</a></li>
+<li><a href="#uuid-validator">UUID validator</a></li>
+<li><a href="#non-default-validator">Non-default validator</a></li>
+<li><a href="#non-empty-validator">Non-empty validator</a></li>
+<li><a href="#regexp-validator">Regexp validator</a></li>
+<li><a href="#custom-validators">Custom validators</a></li>
+</ul>
+</li>
+<li><a href="#optional-vs-required-validators">Optional vs. required validators</a></li>
+<li><a href="#streaming-requests">Streaming requests</a></li>
+<li><a href="#enabling-rich-error-details">Enabling rich error details</a></li>
+</ul>
+</li>
+<li><a href="#contributing">Contributing</a><ul>
+<li><a href="#generating-html-documentation">Generating HTML Documentation</a></li>
+</ul>
+</li>
+<li><a href="#license">License</a></li>
+</ul>
+</li>
+</ul>
 </div>
 <ul id="index">
 <li><h3><a href="#header-submodules">Sub-modules</a></h3>

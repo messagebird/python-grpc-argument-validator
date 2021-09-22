@@ -90,7 +90,7 @@ class TestValidators(unittest.TestCase):
                 non_empty=["message.value"],
                 uuids=["uuid.value"],
                 error=True,
-                error_message="message.value must be non-empty",
+                error_message="'message.value' must be non-empty",
             ),
             TestCase(
                 description="Test missing uuid",
@@ -104,7 +104,7 @@ class TestValidators(unittest.TestCase):
                 has=["message.value", "rectangle.lo.name", "rectangle.hi.name"],
                 uuids=["uuid.value"],
                 error=True,
-                error_message="request must have uuid",
+                error_message="must have 'uuid'",
             ),
             TestCase(
                 description="Test invalid uuid",
@@ -119,7 +119,7 @@ class TestValidators(unittest.TestCase):
                 has=["message.value", "rectangle.lo.name", "rectangle.hi.name"],
                 uuids=["uuid.value"],
                 error=True,
-                error_message="uuid.value must be a valid UUID",
+                error_message="'uuid.value' must be a valid UUID",
             ),
             TestCase(
                 description="Test optional uuid",
@@ -142,7 +142,7 @@ class TestValidators(unittest.TestCase):
                 ),
                 has=["message.value", "rectangle.lo.name", "rectangle.hi.name"],
                 error=True,
-                error_message="request must have rectangle.hi.name",
+                error_message="must have 'rectangle.hi.name'",
             ),
             TestCase(
                 description="Test without hi valid",
@@ -158,7 +158,7 @@ class TestValidators(unittest.TestCase):
                 proto=Area(message=StringValue(value="message")),
                 has=["message.value", "rectangle.lo"],
                 error=True,
-                error_message="request must have rectangle",
+                error_message="must have 'rectangle'",
             ),
             TestCase(
                 description="Test repeated non-empty valid",
@@ -173,14 +173,14 @@ class TestValidators(unittest.TestCase):
                 has=[],
                 non_empty=["points"],
                 error=True,
-                error_message="points must be non-empty",
+                error_message="'points' must be non-empty",
             ),
             TestCase(
                 description="Test repeated recursive",
                 proto=Path(points=[Point(x=1, y=1, name=StringValue(value="a")), Point(x=1, y=1)]),
                 has=["points.name"],
                 error=True,
-                error_message="request must have points[1].name",
+                error_message="must have 'points[1].name'",
             ),
             TestCase(
                 description="Test repeated recursive valid",
@@ -198,7 +198,7 @@ class TestValidators(unittest.TestCase):
                 has=[],
                 non_empty=["points.name.value"],
                 error=True,
-                error_message="points[1].name.value must be non-empty",
+                error_message="'points[1].name.value' must be non-empty",
             ),
             TestCase(
                 description="Test repeated recursive valid because empty list",
@@ -227,7 +227,7 @@ class TestValidators(unittest.TestCase):
                 has=[],
                 non_default=["planet.value"],
                 error=True,
-                error_message="planet.value must have non-default value",
+                error_message="'planet.value' must have non-default value",
             ),
             TestCase(
                 description="Non-default optional",
@@ -242,7 +242,7 @@ class TestValidators(unittest.TestCase):
                 has=[],
                 optional_non_default=["planet.value"],
                 error=True,
-                error_message="planet.value must have non-default value",
+                error_message="'planet.value' must have non-default value",
             ),
             TestCase(
                 description="Non-default valid",
@@ -272,7 +272,7 @@ class TestValidators(unittest.TestCase):
                 has=[],
                 validators={"message.value": RegexpValidator(pattern=r"\d+")},
                 error=True,
-                error_message=r"message.value must match regexp pattern: \d+",
+                error_message=r"'message.value' must match regexp pattern: \d+",
             ),
             TestCase(
                 description="Test valid regex",
@@ -301,7 +301,7 @@ class TestValidators(unittest.TestCase):
                 has=[],
                 optional_validators={"message.value": RegexpValidator(pattern=r"\d+")},
                 error=True,
-                error_message=r"message.value must match regexp pattern: \d+",
+                error_message=r"'message.value' must match regexp pattern: \d+",
             ),
             TestCase(
                 description="Test valid list multi tags",
@@ -316,7 +316,7 @@ class TestValidators(unittest.TestCase):
                 proto=Route(tags=["first", ""]),
                 non_empty=["tags", "tags[]"],
                 error=True,
-                error_message="tags[1] must be non-empty",
+                error_message="'tags[1]' must be non-empty",
             ),
             TestCase(
                 description="Test invalid list empty list multi tags",
@@ -324,7 +324,7 @@ class TestValidators(unittest.TestCase):
                 proto=Route(tags=[]),
                 non_empty=["tags", "tags[]"],
                 error=True,
-                error_message="tags must be non-empty",
+                error_message="'tags' must be non-empty",
             ),
             TestCase(
                 description="Test base proto invalid route empty name",

@@ -58,7 +58,7 @@ class AbstractArgumentValidator(abc.ABC):
             Returns:
                 result (ValidationResult): validation bool for the given value
         &#34;&#34;&#34;
-        pass
+        pass  # pragma: no cover
 
 
 class UUIDBytesValidator(AbstractArgumentValidator):
@@ -70,7 +70,7 @@ class UUIDBytesValidator(AbstractArgumentValidator):
         try:
             uuid.UUID(bytes=value)
         except (ValueError, TypeError):
-            return ValidationResult(False, f&#34;{name} must be a valid UUID&#34;)
+            return ValidationResult(False, f&#34;&#39;{name}&#39; must be a valid UUID&#34;)
         return ValidationResult(True)
 
 
@@ -82,7 +82,7 @@ class NonDefaultValidator(AbstractArgumentValidator):
     ) -&gt; ValidationResult:
         if value != field_descriptor.default_value:
             return ValidationResult(True)
-        return ValidationResult(False, f&#34;{name} must have non-default value&#34;)
+        return ValidationResult(False, f&#34;&#39;{name}&#39; must have non-default value&#34;)
 
 
 class NonEmptyValidator(AbstractArgumentValidator):
@@ -93,7 +93,7 @@ class NonEmptyValidator(AbstractArgumentValidator):
     ) -&gt; ValidationResult:
         if len(value) &gt; 0:
             return ValidationResult(True)
-        return ValidationResult(False, f&#34;{name} must be non-empty&#34;)
+        return ValidationResult(False, f&#34;&#39;{name}&#39; must be non-empty&#34;)
 
 
 class RegexpValidator(AbstractArgumentValidator):
@@ -112,7 +112,7 @@ class RegexpValidator(AbstractArgumentValidator):
     ) -&gt; ValidationResult:
         if re.match(self._pattern, value) is not None:
             return ValidationResult(True)
-        return ValidationResult(False, f&#34;{name} must match regexp pattern: {self._pattern}&#34;)</code></pre>
+        return ValidationResult(False, f&#34;&#39;{name}&#39; must match regexp pattern: {self._pattern}&#34;)</code></pre>
 </details>
 </section>
 <section>
@@ -154,7 +154,7 @@ class RegexpValidator(AbstractArgumentValidator):
             Returns:
                 result (ValidationResult): validation bool for the given value
         &#34;&#34;&#34;
-        pass</code></pre>
+        pass  # pragma: no cover</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -203,7 +203,7 @@ def check(
         Returns:
             result (ValidationResult): validation bool for the given value
     &#34;&#34;&#34;
-    pass</code></pre>
+    pass  # pragma: no cover</code></pre>
 </details>
 </dd>
 </dl>
@@ -225,7 +225,7 @@ def check(
     ) -&gt; ValidationResult:
         if value != field_descriptor.default_value:
             return ValidationResult(True)
-        return ValidationResult(False, f&#34;{name} must have non-default value&#34;)</code></pre>
+        return ValidationResult(False, f&#34;&#39;{name}&#39; must have non-default value&#34;)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -258,7 +258,7 @@ def check(
     ) -&gt; ValidationResult:
         if len(value) &gt; 0:
             return ValidationResult(True)
-        return ValidationResult(False, f&#34;{name} must be non-empty&#34;)</code></pre>
+        return ValidationResult(False, f&#34;&#39;{name}&#39; must be non-empty&#34;)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -302,7 +302,7 @@ def check(
     ) -&gt; ValidationResult:
         if re.match(self._pattern, value) is not None:
             return ValidationResult(True)
-        return ValidationResult(False, f&#34;{name} must match regexp pattern: {self._pattern}&#34;)</code></pre>
+        return ValidationResult(False, f&#34;&#39;{name}&#39; must match regexp pattern: {self._pattern}&#34;)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -336,7 +336,7 @@ def check(
         try:
             uuid.UUID(bytes=value)
         except (ValueError, TypeError):
-            return ValidationResult(False, f&#34;{name} must be a valid UUID&#34;)
+            return ValidationResult(False, f&#34;&#39;{name}&#39; must be a valid UUID&#34;)
         return ValidationResult(True)</code></pre>
 </details>
 <h3>Ancestors</h3>

@@ -80,7 +80,7 @@ class TestStreamingValidators(unittest.TestCase):
                 has=["name"],
                 proto_stream=[Point(name=StringValue(value="name")), Point()],
                 error=True,
-                error_message="request must have name",
+                error_message="must have 'name'",
             ),
             TestCase(
                 description="Test field uuid available in every part of streaming request",
@@ -97,7 +97,7 @@ class TestStreamingValidators(unittest.TestCase):
                 has=[],
                 uuids=["uuid.value"],
                 error=True,
-                error_message="request must have uuid",
+                error_message="must have 'uuid'",
             ),
             TestCase(
                 description="Test optional uuid not available in every part of streaming request",
@@ -111,7 +111,7 @@ class TestStreamingValidators(unittest.TestCase):
                 has=[],
                 optional_uuids=["uuid.value"],
                 error=True,
-                error_message="uuid.value must be a valid UUID",
+                error_message="'uuid.value' must be a valid UUID",
             ),
             TestCase(
                 description="Test non-default check in every part of streaming request",
@@ -125,7 +125,7 @@ class TestStreamingValidators(unittest.TestCase):
                 has=[],
                 non_default=["name.value"],
                 error=True,
-                error_message="name.value must have non-default value",
+                error_message="'name.value' must have non-default value",
             ),
             TestCase(
                 description="Test non-empty check in every part of streaming request",
@@ -139,7 +139,7 @@ class TestStreamingValidators(unittest.TestCase):
                 has=[],
                 non_empty=["name.value"],
                 error=True,
-                error_message="name.value must be non-empty",
+                error_message="'name.value' must be non-empty",
             ),
             TestCase(
                 description="Test regex matching every part of streaming request",
@@ -153,7 +153,7 @@ class TestStreamingValidators(unittest.TestCase):
                 proto_stream=[Point(name=StringValue(value="1234")), Point(name=StringValue(value="another name"))],
                 validators={"name.value": RegexpValidator(r"\d+")},
                 error=True,
-                error_message=r"name.value must match regexp pattern: \d+",
+                error_message=r"'name.value' must match regexp pattern: \d+",
             ),
             TestCase(
                 description="Test iteration specific validation",

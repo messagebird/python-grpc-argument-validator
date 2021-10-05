@@ -33,26 +33,31 @@
 <h2 id="getting-started">Getting Started</h2>
 <p>This is an example of how you may give instructions on setting up your project locally.
 To get a local copy up and running follow these simple example steps.</p>
-<h3 id="prerequisites">Prerequisites</h3>
-<p>Poetry is required to locally run the tests for this library
-* poetry
-<code>sh
-pip install --user poetry</code></p>
 <h3 id="installation">Installation</h3>
-<ol>
-<li>Clone the repo
-<code>sh
-git clone &lt;https://github.com/messagebird/python-grpc-argument-validator.git&gt;</code></li>
-<li>Install packages
-<code>sh
-poetry install</code></li>
-<li>Run the tests
-<code>sh
-cd src/tests
-poetry run python -m unittest</code></li>
-</ol>
-<h3 id="installation-via-pip">Installation via pip</h3>
+<h4 id="from-pypi">From PyPI</h4>
 <pre><code class="language-sh">pip install grpc-argument-validator
+</code></pre>
+<h4 id="from-source">From source</h4>
+<ul>
+<li>
+<p>Install <a href="https://python-poetry.org/docs/"><code>poetry</code></a></p>
+</li>
+<li>
+<p>Clone repo</p>
+</li>
+</ul>
+<pre><code class="language-sh">git clone https://github.com/messagebird/python-grpc-argument-validator.git
+</code></pre>
+<ul>
+<li>Install packages</li>
+</ul>
+<pre><code class="language-sh">cd python-grpc-argument-validator &amp;&amp; poetry install
+</code></pre>
+<ul>
+<li>Run the tests</li>
+</ul>
+<pre><code class="language-sh">cd src/tests
+poetry run python -m unittest
 </code></pre>
 <!-- USAGE EXAMPLES -->
 <h2 id="quick-example">Quick Example</h2>
@@ -129,6 +134,7 @@ message Route {
 
 service RouteService {
   rpc CreateRoute(Route) returns (google.protobuf.Empty);
+  rpc CreateArea(Area) returns (google.protobuf.Empty);
 }
 </code></pre>
 <ul>
@@ -149,22 +155,22 @@ from tests.route_guide_protos.route_guide_pb2_grpc import RouteServiceServicer
 
 class RouteServiceImpl(RouteServiceServicer):
     @validate_args(non_empty=[&quot;planet&quot;, &quot;name.value&quot;])
-    def Create(self, request: Route, context: grpc.ServicerContext):
+    def CreateRoute(self, request: Route, context: grpc.ServicerContext):
         return Empty()
 </code></pre>
 <p>Calling the service with a default value for either <code>planet</code> or <code>name.value</code> will yield an <code>INVALID_ARGUMENT</code> status code
 with further details on which fields violate the validation.</p>
 <h3 id="validators">Validators</h3>
-<p>There are two kinds of validators you might consider.</p>
+<p>There are two kinds of validators you might consider:</p>
 <ul>
-<li>We have predefined some common validators which we will cover shortly</li>
+<li>There are predefined validators which we will cover shortly</li>
 <li>Another option is to define your own validators</li>
 </ul>
 <p>In the examples below, we have used exactly one validator + field path per <code>validate_args</code> decorator for clarity.
 Fortunately, our API allows you to use multiple validators and fields!</p>
 <h4 id="has-validator">'Has' validator</h4>
 <p>The simplest of all predefined validators is the 'has' validator which simply checks whether a <code>HasField</code> evaluates to
-<code>True</code>. This of course works in combination with nested fields. The underlying</p>
+<code>True</code>. This of course works in combination with nested fields.</p>
 <p>In the example below, calling the <code>Create</code> endpoint without setting <code>Route.name</code> would result in an <code>INVALID_ARGUMENT</code>
 status.</p>
 <pre><code class="language-python">
@@ -254,9 +260,9 @@ class RouteServiceImpl(RouteServiceServicer):
 </code></pre>
 <p>Which will print <code>'message.value' must match regexp pattern: \d+</code>.</p>
 <h4 id="custom-validators">Custom validators</h4>
-<p>You can also write custom validators that to flexibily handle your use-case. You need to derive a class from
+<p>You can also write custom validators to flexibily handle your use-case. You need to derive a class from
 <code>AbstractArgumentValidator</code> and implement its <code>check</code> method. The example below shows how to implement a simple
-validator for checking that a path should have 5 points. You can provide such custom validators through a <code>dict</code> that
+validator for checking that a path has 5 points. You can provide such custom validators through a <code>dict</code> that
 maps a field path to a validator:</p>
 <pre><code class="language-python">from grpc_argument_validator import AbstractArgumentValidator
 from grpc_argument_validator import ValidationContext
@@ -281,16 +287,17 @@ class RouteServiceImpl(RouteServiceServicer):
         return Empty()
 </code></pre>
 <h3 id="optional-vs-required-validators">Optional vs. required validators</h3>
-<p>For each of the built-in validators, there are two arguments that <code>validate_arg</code> takes in. One of those is prepended
-with <code>optional_</code>. This means that apart from <code>uuid</code>, <code>non_default</code> and <code>non_empty</code> we also have <code>optional_uuid</code>,
-<code>optional_non_default</code> and <code>optional_non_empty</code>. The behavior is slightly different: for any of the <code>optional_*</code>
-validators, it is OK if the field is not contained by the incoming request. Sometimes fields are simply optional, and
-you only want to validate them <em>if</em> they are present.</p>
+<p>For each of the built-in validators (except for the <code>has</code> validator), <code>validate_args</code> has not one but two keyword
+arguments. One of those is prepended with <code>optional_</code>. This means that apart from <code>uuid</code>, <code>non_default</code> and
+<code>non_empty</code> we also have <code>optional_uuid</code>, <code>optional_non_default</code> and <code>optional_non_empty</code>. The behavior is slightly
+different: for any of the <code>optional_*</code> validators, it is OK if the field is not contained by the incoming request.
+Sometimes fields are simply optional, and you only want to validate them <em>if</em> they are present.</p>
 <p>Since it is also common that fields are <em>not optional</em>, we also provide the required validators (without <code>optional_*</code>)
 for which <a href="https://googleapis.dev/python/protobuf/latest/google/protobuf/message.html#google.protobuf.message.Message.HasField"><code>HasField</code></a>
 must evaluate to <code>True</code> for that field and all preceding fields in the protos hierarchy.</p>
 <p>The custom validator counterparts are <code>validators</code> and <code>optional_validators</code>. Each takes a <code>dict</code> with a mapping of
-field paths to validators.</p>
+field paths to validators. These can be used for validators that might be preconfigured such as the <code>RegexpValidator</code>
+or for customer validators.</p>
 <h3 id="streaming-requests">Streaming requests</h3>
 <p>You can also use the validators for streaming requests. Since streaming requests might not all look the same in a
 single stream (e.g. the first request might have metadata describing the remainder of the stream), we provide a
@@ -424,9 +431,11 @@ from .validate_args_decorator import validate_args</code></pre>
 <ul>
 <li><a href="#grpc-argument-validator">gRPC argument validator</a><ul>
 <li><a href="#getting-started">Getting Started</a><ul>
-<li><a href="#prerequisites">Prerequisites</a></li>
-<li><a href="#installation">Installation</a></li>
-<li><a href="#installation-via-pip">Installation via pip</a></li>
+<li><a href="#installation">Installation</a><ul>
+<li><a href="#from-pypi">From PyPI</a></li>
+<li><a href="#from-source">From source</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li><a href="#quick-example">Quick Example</a></li>

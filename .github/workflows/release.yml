@@ -51,7 +51,7 @@ jobs:
         python-version: '3.7'
 
     - name: Install poetry
-      run: pip install poetry==1.1.6
+      run: pip install poetry==1.1.9
 
     - name: Format Dev Version
       run: >-
@@ -80,7 +80,7 @@ jobs:
       with:
         python-version: '3.7'
     - name: Install Poetry
-      run: pip install poetry==1.1.6
+      run: pip install poetry==1.1.9
     - name: Build Package
       run: poetry build
     - name: Publish to public PyPI

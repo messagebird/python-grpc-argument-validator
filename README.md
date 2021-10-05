@@ -14,33 +14,36 @@ gRPC argument validator is a library that provides decorators to automatically v
 This is an example of how you may give instructions on setting up your project locally.
 To get a local copy up and running follow these simple example steps.
 
-### Prerequisites
-
-Poetry is required to locally run the tests for this library
-* poetry
-  ```sh
-  pip install --user poetry
-  ```
-
 ### Installation
-1. Clone the repo
-   ```sh
-   git clone https://github.com/messagebird/python-grpc-argument-validator.git
-   ```
-2. Install packages
-   ```sh
-   poetry install
-   ```
-3. Run the tests
-   ```sh
-   cd src/tests
-   poetry run python -m unittest
-   ```
 
-### Installation via pip
+#### From PyPI
 ```sh
 pip install grpc-argument-validator
 ```
+
+#### From source
+
+- Install [`poetry`](https://python-poetry.org/docs/)
+
+- Clone repo
+
+```sh
+git clone https://github.com/messagebird/python-grpc-argument-validator.git
+```
+
+- Install packages
+
+```sh
+cd python-grpc-argument-validator && poetry install
+```
+
+- Run the tests
+
+```sh
+cd src/tests
+poetry run python -m unittest
+```
+
 
 
 <!-- USAGE EXAMPLES -->
@@ -124,6 +127,7 @@ message Route {
 
 service RouteService {
   rpc CreateRoute(Route) returns (google.protobuf.Empty);
+  rpc CreateArea(Area) returns (google.protobuf.Empty);
 }
 ```
 - If you want to validate the field `planet` in a `Route` proto, simply specify `"planet"` or equivalently `".planet"`.
@@ -145,7 +149,7 @@ from tests.route_guide_protos.route_guide_pb2_grpc import RouteServiceServicer
 
 class RouteServiceImpl(RouteServiceServicer):
     @validate_args(non_empty=["planet", "name.value"])
-    def Create(self, request: Route, context: grpc.ServicerContext):
+    def CreateRoute(self, request: Route, context: grpc.ServicerContext):
         return Empty()
 ```
 
@@ -153,9 +157,9 @@ Calling the service with a default value for either `planet` or `name.value` wil
 with further details on which fields violate the validation.
 
 ### Validators
-There are two kinds of validators you might consider.
+There are two kinds of validators you might consider:
 
-- We have predefined some common validators which we will cover shortly
+- There are predefined validators which we will cover shortly
 - Another option is to define your own validators
 
 In the examples below, we have used exactly one validator + field path per `validate_args` decorator for clarity.
@@ -163,7 +167,7 @@ Fortunately, our API allows you to use multiple validators and fields!
 
 #### 'Has' validator
 The simplest of all predefined validators is the 'has' validator which simply checks whether a `HasField` evaluates to
-`True`. This of course works in combination with nested fields. The underlying
+`True`. This of course works in combination with nested fields.
 
 In the example below, calling the `Create` endpoint without setting `Route.name` would result in an `INVALID_ARGUMENT`
 status.
@@ -271,9 +275,9 @@ with grpc.insecure_channel("127.0.0.1:50051") as c:
 Which will print `'message.value' must match regexp pattern: \d+`.
 
 #### Custom validators
-You can also write custom validators that to flexibily handle your use-case. You need to derive a class from
+You can also write custom validators to flexibily handle your use-case. You need to derive a class from
 `AbstractArgumentValidator` and implement its `check` method. The example below shows how to implement a simple
-validator for checking that a path should have 5 points. You can provide such custom validators through a `dict` that
+validator for checking that a path has 5 points. You can provide such custom validators through a `dict` that
 maps a field path to a validator:
 ```python
 from grpc_argument_validator import AbstractArgumentValidator
@@ -300,18 +304,19 @@ class RouteServiceImpl(RouteServiceServicer):
 ```
 
 ### Optional vs. required validators
-For each of the built-in validators, there are two arguments that `validate_arg` takes in. One of those is prepended
-with `optional_`. This means that apart from `uuid`, `non_default` and `non_empty` we also have `optional_uuid`,
-`optional_non_default` and `optional_non_empty`. The behavior is slightly different: for any of the `optional_*`
-validators, it is OK if the field is not contained by the incoming request. Sometimes fields are simply optional, and
-you only want to validate them _if_ they are present.
+For each of the built-in validators (except for the `has` validator), `validate_args` has not one but two keyword
+arguments. One of those is prepended with `optional_`. This means that apart from `uuid`, `non_default` and
+`non_empty` we also have `optional_uuid`, `optional_non_default` and `optional_non_empty`. The behavior is slightly
+different: for any of the `optional_*` validators, it is OK if the field is not contained by the incoming request.
+Sometimes fields are simply optional, and you only want to validate them _if_ they are present.
 
 Since it is also common that fields are _not optional_, we also provide the required validators (without `optional_*`)
 for which [`HasField`](https://googleapis.dev/python/protobuf/latest/google/protobuf/message.html#google.protobuf.message.Message.HasField)
 must evaluate to `True` for that field and all preceding fields in the protos hierarchy.
 
 The custom validator counterparts are `validators` and `optional_validators`. Each takes a `dict` with a mapping of
-field paths to validators.
+field paths to validators. These can be used for validators that might be preconfigured such as the `RegexpValidator`
+or for customer validators.
 
 ### Streaming requests
 You can also use the validators for streaming requests. Since streaming requests might not all look the same in a

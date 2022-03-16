@@ -4,9 +4,11 @@ from dataclasses import dataclass
 from typing import Any
 from typing import Callable
 from typing import Dict
+from typing import Generator
 from typing import Iterable
 from typing import List
 from typing import Optional
+from typing import TypeVar
 from typing import Union
 
 import grpc
@@ -32,8 +34,12 @@ class _FieldViolation:
     reason: str
 
 
-def _none_or_empty(x: Optional[List[Any]]):
+def _none_or_empty(x: Optional[List[Any]]) -> bool:
     return x is None or len(x) == 0
+
+
+M = TypeVar("M", bound=Message)
+R = TypeVar("R")
 
 
 def validate_args(
@@ -46,7 +52,7 @@ def validate_args(
     optional_non_default: Optional[List[str]] = None,
     validators: Optional[Dict[str, AbstractArgumentValidator]] = None,
     optional_validators: Optional[Dict[str, AbstractArgumentValidator]] = None,
-) -> Callable:
+) -> Callable[[Callable[..., R]], Callable[..., R]]:
     """
     Decorator to validate Message type arguments for gRPC methods.
 
@@ -122,8 +128,10 @@ def validate_args(
     if mandatory_fields.intersection(optional_fields):
         raise ValueError("Overlap in mandatory and optional fields")
 
-    def decorating_function(func):
-        def validate_message(request: Message, context: grpc.ServicerContext, validation_context: ValidationContext):
+    def decorating_function(func: Callable[..., R]) -> Callable[..., R]:
+        def validate_message(
+            request: Message, context: grpc.ServicerContext, validation_context: ValidationContext
+        ) -> None:
             field_violations = []
             for field_name in field_names:
                 field_validators: List[AbstractArgumentValidator] = []
@@ -162,13 +170,13 @@ def validate_args(
                         grpc.StatusCode.INVALID_ARGUMENT, ", ".join([e.reason for e in field_violations])[:1000]
                     )
 
-        def validate_streaming(requests: Iterable[Message], context: grpc.ServicerContext):
+        def validate_streaming(requests: Iterable[M], context: grpc.ServicerContext) -> Generator[M, None, None]:
             for i, req in enumerate(requests):
                 validate_message(req, context, ValidationContext(is_streaming=True, streaming_message_index=i))
                 yield req
 
         @functools.wraps(func)
-        def validate_wrapper(self, request: Union[Message, Iterable[Message]], context: grpc.ServicerContext):
+        def validate_wrapper(self: Any, request: Union[M, Iterable[M]], context: grpc.ServicerContext) -> R:
             if isinstance(request, Iterable):
                 return func(self, validate_streaming(request, context), context)
             else:
@@ -180,7 +188,7 @@ def validate_args(
     return decorating_function
 
 
-def _create_rich_validation_error(field_violations: List[_FieldViolation]):
+def _create_rich_validation_error(field_violations: List[_FieldViolation]) -> status_pb2.Status:
     detail = any_pb2.Any()
     detail.Pack(
         error_details_pb2.BadRequest(
@@ -202,7 +210,7 @@ def _recurse_validate(
     name: str,
     validation_context: ValidationContext,
     validators: List[AbstractArgumentValidator],
-    leading_parts_name: str = None,
+    leading_parts_name: Optional[str] = None,
     is_optional: bool = False,
 ) -> List[_FieldViolation]:
     field_violations: List[_FieldViolation] = []

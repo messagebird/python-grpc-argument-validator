@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.9.2" />
+<meta name="generator" content="pdoc 0.10.0" />
 <title>grpc_argument_validator.validate_args_decorator API documentation</title>
 <meta name="description" content="" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
@@ -32,9 +32,11 @@ from dataclasses import dataclass
 from typing import Any
 from typing import Callable
 from typing import Dict
+from typing import Generator
 from typing import Iterable
 from typing import List
 from typing import Optional
+from typing import TypeVar
 from typing import Union
 
 import grpc
@@ -60,8 +62,12 @@ class _FieldViolation:
     reason: str
 
 
-def _none_or_empty(x: Optional[List[Any]]):
+def _none_or_empty(x: Optional[List[Any]]) -&gt; bool:
     return x is None or len(x) == 0
+
+
+M = TypeVar(&#34;M&#34;, bound=Message)
+R = TypeVar(&#34;R&#34;)
 
 
 def validate_args(
@@ -74,7 +80,7 @@ def validate_args(
     optional_non_default: Optional[List[str]] = None,
     validators: Optional[Dict[str, AbstractArgumentValidator]] = None,
     optional_validators: Optional[Dict[str, AbstractArgumentValidator]] = None,
-) -&gt; Callable:
+) -&gt; Callable[[Callable[..., R]], Callable[..., R]]:
     &#34;&#34;&#34;
     Decorator to validate Message type arguments for gRPC methods.
 
@@ -150,8 +156,10 @@ def validate_args(
     if mandatory_fields.intersection(optional_fields):
         raise ValueError(&#34;Overlap in mandatory and optional fields&#34;)
 
-    def decorating_function(func):
-        def validate_message(request: Message, context: grpc.ServicerContext, validation_context: ValidationContext):
+    def decorating_function(func: Callable[..., R]) -&gt; Callable[..., R]:
+        def validate_message(
+            request: Message, context: grpc.ServicerContext, validation_context: ValidationContext
+        ) -&gt; None:
             field_violations = []
             for field_name in field_names:
                 field_validators: List[AbstractArgumentValidator] = []
@@ -190,13 +198,13 @@ def validate_args(
                         grpc.StatusCode.INVALID_ARGUMENT, &#34;, &#34;.join([e.reason for e in field_violations])[:1000]
                     )
 
-        def validate_streaming(requests: Iterable[Message], context: grpc.ServicerContext):
+        def validate_streaming(requests: Iterable[M], context: grpc.ServicerContext) -&gt; Generator[M, None, None]:
             for i, req in enumerate(requests):
                 validate_message(req, context, ValidationContext(is_streaming=True, streaming_message_index=i))
                 yield req
 
         @functools.wraps(func)
-        def validate_wrapper(self, request: Union[Message, Iterable[Message]], context: grpc.ServicerContext):
+        def validate_wrapper(self: Any, request: Union[M, Iterable[M]], context: grpc.ServicerContext) -&gt; R:
             if isinstance(request, Iterable):
                 return func(self, validate_streaming(request, context), context)
             else:
@@ -208,7 +216,7 @@ def validate_args(
     return decorating_function
 
 
-def _create_rich_validation_error(field_violations: List[_FieldViolation]):
+def _create_rich_validation_error(field_violations: List[_FieldViolation]) -&gt; status_pb2.Status:
     detail = any_pb2.Any()
     detail.Pack(
         error_details_pb2.BadRequest(
@@ -230,7 +238,7 @@ def _recurse_validate(
     name: str,
     validation_context: ValidationContext,
     validators: List[AbstractArgumentValidator],
-    leading_parts_name: str = None,
+    leading_parts_name: Optional[str] = None,
     is_optional: bool = False,
 ) -&gt; List[_FieldViolation]:
     field_violations: List[_FieldViolation] = []
@@ -317,7 +325,7 @@ def _recurse_validate(
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="grpc_argument_validator.validate_args_decorator.validate_args"><code class="name flex">
-<span>def <span class="ident">validate_args</span></span>(<span>has: Union[List[str], NoneType] = None, uuids: Union[List[str], NoneType] = None, non_default: Union[List[str], NoneType] = None, non_empty: Union[List[str], NoneType] = None, optional_uuids: Union[List[str], NoneType] = None, optional_non_empty: Union[List[str], NoneType] = None, optional_non_default: Union[List[str], NoneType] = None, validators: Union[Dict[str, <a title="grpc_argument_validator.argument_validators.AbstractArgumentValidator" href="argument_validators.html#grpc_argument_validator.argument_validators.AbstractArgumentValidator">AbstractArgumentValidator</a>], NoneType] = None, optional_validators: Union[Dict[str, <a title="grpc_argument_validator.argument_validators.AbstractArgumentValidator" href="argument_validators.html#grpc_argument_validator.argument_validators.AbstractArgumentValidator">AbstractArgumentValidator</a>], NoneType] = None) ‑> Callable</span>
+<span>def <span class="ident">validate_args</span></span>(<span>has: Optional[List[str]] = None, uuids: Optional[List[str]] = None, non_default: Optional[List[str]] = None, non_empty: Optional[List[str]] = None, optional_uuids: Optional[List[str]] = None, optional_non_empty: Optional[List[str]] = None, optional_non_default: Optional[List[str]] = None, validators: Optional[Dict[str, <a title="grpc_argument_validator.argument_validators.AbstractArgumentValidator" href="argument_validators.html#grpc_argument_validator.argument_validators.AbstractArgumentValidator">AbstractArgumentValidator</a>]] = None, optional_validators: Optional[Dict[str, <a title="grpc_argument_validator.argument_validators.AbstractArgumentValidator" href="argument_validators.html#grpc_argument_validator.argument_validators.AbstractArgumentValidator">AbstractArgumentValidator</a>]] = None) ‑> Callable[[Callable[..., ~R]], Callable[..., ~R]]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Decorator to validate Message type arguments for gRPC methods.</p>
@@ -363,7 +371,7 @@ Returns:
     optional_non_default: Optional[List[str]] = None,
     validators: Optional[Dict[str, AbstractArgumentValidator]] = None,
     optional_validators: Optional[Dict[str, AbstractArgumentValidator]] = None,
-) -&gt; Callable:
+) -&gt; Callable[[Callable[..., R]], Callable[..., R]]:
     &#34;&#34;&#34;
     Decorator to validate Message type arguments for gRPC methods.
 
@@ -439,8 +447,10 @@ Returns:
     if mandatory_fields.intersection(optional_fields):
         raise ValueError(&#34;Overlap in mandatory and optional fields&#34;)
 
-    def decorating_function(func):
-        def validate_message(request: Message, context: grpc.ServicerContext, validation_context: ValidationContext):
+    def decorating_function(func: Callable[..., R]) -&gt; Callable[..., R]:
+        def validate_message(
+            request: Message, context: grpc.ServicerContext, validation_context: ValidationContext
+        ) -&gt; None:
             field_violations = []
             for field_name in field_names:
                 field_validators: List[AbstractArgumentValidator] = []
@@ -479,13 +489,13 @@ Returns:
                         grpc.StatusCode.INVALID_ARGUMENT, &#34;, &#34;.join([e.reason for e in field_violations])[:1000]
                     )
 
-        def validate_streaming(requests: Iterable[Message], context: grpc.ServicerContext):
+        def validate_streaming(requests: Iterable[M], context: grpc.ServicerContext) -&gt; Generator[M, None, None]:
             for i, req in enumerate(requests):
                 validate_message(req, context, ValidationContext(is_streaming=True, streaming_message_index=i))
                 yield req
 
         @functools.wraps(func)
-        def validate_wrapper(self, request: Union[Message, Iterable[Message]], context: grpc.ServicerContext):
+        def validate_wrapper(self: Any, request: Union[M, Iterable[M]], context: grpc.ServicerContext) -&gt; R:
             if isinstance(request, Iterable):
                 return func(self, validate_streaming(request, context), context)
             else:
@@ -522,7 +532,7 @@ Returns:
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
 </footer>
 </body>
 </html>

@@ -13,7 +13,7 @@ def is_valid_field_path(path: str) -> bool:
     return re.match(r"^(?:\.|\.?(?:[a-zA-Z][a-zA-Z_0-9]*\.)*(?:[a-zA-Z][a-zA-Z_0-9]*)(?:\[\])?)$", path) is not None
 
 
-def validate_field_names(field_names: typing.Iterable[str]):
+def validate_field_names(field_names: typing.Iterable[str]) -> None:
     """
     Validates that all field names adhere to the Protobuf 3 language specification
 

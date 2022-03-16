@@ -6,7 +6,7 @@ class ArgumentValidatorConfig:
     _use_rich_grpc_errors = False
 
     @classmethod
-    def set_rich_grpc_errors(cls, enabled: bool = True):
+    def set_rich_grpc_errors(cls, enabled: bool = True) -> None:
         """
         Set the option to use rich gRPC errors
         """
